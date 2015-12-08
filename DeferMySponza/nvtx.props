@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)'=='Debug NVTX'">
+	<ConfigurationBase>Debug</ConfigurationBase>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release NVTX'">
+	<ConfigurationBase>Release</ConfigurationBase>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <NvtxName>nvToolsExt64_1</NvtxName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)'=='Win32'">
+    <NvtxName>nvToolsExt32_1</NvtxName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>$(NvtxName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(SolutionDir)external\lib\$(Platform)\$(PlatformToolset)\$(ConfigurationBase)\$(NvtxName).dll" "$(SolutionDir)demo"
+      %(Command)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+
+  <ItemGroup />
+</Project>
