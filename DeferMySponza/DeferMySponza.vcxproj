@@ -317,6 +317,14 @@
     <ClInclude Include="MyController.hpp" />
     <ClInclude Include="MyView.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\demo\ambient_fs.glsl" />
+    <None Include="..\demo\ambient_vs.glsl" />
+    <None Include="..\demo\gbuffer_fs.glsl" />
+    <None Include="..\demo\gbuffer_vs.glsl" />
+    <None Include="..\demo\light_fs.glsl" />
+    <None Include="..\demo\light_vs.glsl" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

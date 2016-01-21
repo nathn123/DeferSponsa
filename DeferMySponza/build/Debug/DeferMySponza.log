@@ -1,5 +1,31 @@
-﻿Build started 08/12/2015 03:50:23.
+﻿Build started 21/01/2016 20:20:05.
+     1>Project "C:\Users\m2087350\Desktop\Defer\trunk\DeferMySponza\DeferMySponza.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /IC:\Users\m2087350\Desktop\Defer\trunk\external/include /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _LIB /D _UNICODE /D UNICODE /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"build\Debug\\" /Fd"build\Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt MyController.cpp MyView.cpp
+         MyController.cpp
+         No target GL version declared, defaulting to GL 3.3
+         MyView.cpp
+         No target GL version declared, defaulting to GL 3.3
+     1>c:\users\m2087350\desktop\defer\trunk\defermysponza\myview.cpp(493): warning C4018: '<' : signed/unsigned mismatch
+         Generating Code...
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"build\Debug\DeferMySponza.exe" /INCREMENTAL /NOLOGO /LIBPATH:C:\Users\m2087350\Desktop\Defer\trunk\external\lib\Win32\v120\Debug scenemodel.lib tcf.lib tsl.lib tygra.lib tgl.lib glfw.lib png.lib zlib.lib opengl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"build\Debug\DeferMySponza.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"build\Debug\DeferMySponza.lib" /MACHINE:X86 build\Debug\main.obj
+         build\Debug\MyController.obj
+         build\Debug\MyView.obj
+         DeferMySponza.vcxproj -> C:\Users\m2087350\Desktop\Defer\trunk\DeferMySponza\build\Debug\DeferMySponza.exe
+       PostBuildEvent:
+         xcopy /E /S /I /Y "doc" "C:\Users\m2087350\Desktop\Defer\trunk\demo"
+         xcopy /E /S /I /Y "demo" "C:\Users\m2087350\Desktop\Defer\trunk\demo"
+         xcopy /Y "C:\Users\m2087350\Desktop\Defer\trunk\DeferMySponza\build\Debug\DeferMySponza.exe" "C:\Users\m2087350\Desktop\Defer\trunk\demo"
+         :VCEnd
+         0 File(s) copied
+         File not found - doc
+         0 File(s) copied
+         File not found - demo
+         C:\Users\m2087350\Desktop\Defer\trunk\DeferMySponza\build\Debug\DeferMySponza.exe
+         1 File(s) copied
+     1>Done Building Project "C:\Users\m2087350\Desktop\Defer\trunk\DeferMySponza\DeferMySponza.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.09
+Time Elapsed 00:00:03.27

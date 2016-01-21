@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{bb506adb-455d-4763-8db3-c16785e5136d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MyController.cpp">
@@ -32,5 +35,25 @@
     <ClInclude Include="MyView.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\demo\ambient_fs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\demo\ambient_vs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\demo\gbuffer_fs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\demo\gbuffer_vs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\demo\light_fs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\demo\light_vs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

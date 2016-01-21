@@ -83,6 +83,39 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindVertexArray(0);
 	}
+	{
+		tsl::IndexedMesh mesh;
+		tsl::CreateSphere(1.f, 12, &mesh);
+		tsl::ConvertPolygonsToTriangles(&mesh);
+
+		light_sphere_mesh_.element_count = mesh.index_array.size();
+
+		glGenBuffers(1, &light_sphere_mesh_.vertex_vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, light_sphere_mesh_.vertex_vbo);
+		glBufferData(GL_ARRAY_BUFFER,
+			mesh.vertex_array.size() * sizeof(glm::vec3),
+			mesh.vertex_array.data(),
+			GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glGenBuffers(1, &light_sphere_mesh_.element_vbo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_sphere_mesh_.element_vbo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+			mesh.index_array.size() * sizeof(unsigned int),
+			mesh.index_array.data(),
+			GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+		glGenVertexArrays(1, &light_sphere_mesh_.vao);
+		glBindVertexArray(light_sphere_mesh_.vao);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_sphere_mesh_.element_vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, light_sphere_mesh_.vertex_vbo);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+			sizeof(glm::vec3), 0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
 
 	//create the shaders
 
@@ -91,8 +124,12 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	std::vector<std::string>fragment_attrib = { "fragment_position","fragment_normal"};
 	gbuffer_prog = glCreateProgram();
 	CreateShader(gbuffer_prog,gbuffer_vertex_shader, "gbuffer_vs.glsl", vertex_attrib, GL_VERTEX_SHADER);
-	CreateShader(gbuffer_prog, gbuffer_fragment_shader, "gbuffer_frag.glsl", fragment_attrib, GL_FRAGMENT_SHADER);
+	CreateShader(gbuffer_prog, gbuffer_fragment_shader, "gbuffer_fs.glsl", fragment_attrib, GL_FRAGMENT_SHADER);
 	glLinkProgram(gbuffer_prog);
+
+	//ambient shaders
+
+	//light shaders
 
 
 	unsigned int totaloffset = 0;
@@ -193,6 +230,8 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	//glVertexAttribPointer(shininess_location, 1, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), TGL_BUFFER_OFFSET(sizeof(glm::mat4) + sizeof(glm::vec3)));
 	//glVertexAttribDivisor(shininess_location, 1);
 
+	
+
 }
 
 void MyView::
@@ -201,6 +240,26 @@ windowViewDidReset(std::shared_ptr<tygra::Window> window,
                    int height)
 {
     glViewport(0, 0, width, height);
+	// build framebuffers build here to ensure resizing causes no issues
+	GLenum framebuffer_status = 0;
+	glBindFramebuffer(GL_FRAMEBUFFER, lbuffer_fbo);
+	// TODO: attach textures and buffers here
+
+	glBindRenderbuffer(GL_RENDERBUFFER, lbuffer_colour_rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB8, width, height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, lbuffer_colour_rbo);
+
+	framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+
+	if (framebuffer_status != GL_FRAMEBUFFER_COMPLETE) {
+		tglDebugMessage(GL_DEBUG_SEVERITY_HIGH_ARB, "framebuffer not complete");
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fbo);
+	glFramebufferTexture2D(GL_TEXTURE_2D, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE, gbuffer_position_tex, 0);
+	glFramebufferTexture2D(GL_TEXTURE_2D, GL_COLOR_ATTACHMENT1, GL_TEXTURE_RECTANGLE, gbuffer_normal_tex, 0);
+	
+	glBindVertexArray(light_quad_mesh_.vao);
 }
 
 void MyView::
@@ -213,8 +272,7 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 {
     assert(scene_ != nullptr);
 
-    glClearColor(0.f, 0.f, 0.25f, 0.f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    
 
 	auto camera = scene_->getCamera();
 	GLint Viewport[4];
@@ -223,26 +281,42 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 	auto view = glm::lookAt(camera.getPosition(), camera.getPosition() + camera.getDirection(), scene_->getUpDirection());
 	auto projection = glm::perspective(camera.getVerticalFieldOfViewInDegrees(), aspect, camera.getNearPlaneDistance(), camera.getFarPlaneDistance());
 
-	// set framebuffer to gbuffer
-	glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fbo_);
-	// draw to GBuffer
 	
+	// draw to GBuffer
 	SetUniforms(gbuffer_prog, view, projection);
 	glBindVertexArray(VAO);
 	gbufferPass();
-	//ambient / directional lights pass back buffer
-
+	//ambient directional lights pass back buffer
+	ambientPass();
 	//light pass back buffer
-	UpdateLights();
-
+	LightPass();
 	//post
 
 	//switch buffer
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, lbuffer_fbo);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 }
 void MyView::gbufferPass()
 {
+	// set framebuffer to gbuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fbo);
+	//clear depth stencil
+	glClear(GL_DEPTH_BUFFER_BIT || GL_STENCIL_BUFFER_BIT);
+	//stencil write to 128
+	glStencilMask(128);
+	//set depth less than
 	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LEQUAL);
+	glDepthFunc(GL_LESS);
+	//disable blend
+	glDisable(GL_BLEND);
+	//bind texture units to 0
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	//loop drawing
+	
 	glUseProgram(gbuffer_prog);
 	for (auto i : geometry_->getAllMeshes())
 	{
@@ -259,51 +333,96 @@ void MyView::gbufferPass()
 	}
 }
 
-void MyView::ambientPass(unsigned int element_count, unsigned int element_offset, std::vector<SceneModel::InstanceId> instances)
+void MyView::ambientPass()
 {
+	//bind lbuffer as framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, lbuffer_fbo);
+	//clear colour attachments to background
+	glClearColor(0.f, 0.f, 0.25f, 0.f);
+	glClear(GL_COLOR_ATTACHMENT0);
+	//set stencil test to = 128 NO WRITE
+	glStencilFunc(GL_EQUAL, 128, ~0);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	// disable depth test
+	glDisable(GL_DEPTH);
+	// disable blend
+	glDisable(GL_BLEND);
+	//bind gbuffer textures
 	glUseProgram(ambient_prog);
 	GLint sampposloc = glGetUniformLocation(ambient_prog, "sampler_world_position");
 	GLint sampnorloc = glGetUniformLocation(ambient_prog, "sampler_world_normal");
 	glUniform1ui(sampposloc, 1);
 	glUniform1ui(sampnorloc, 1);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex_);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex_);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex);
 
 
 	// load all dir lights
-	scene_->getAllDirectionalLights().begin()->;
-	GLint lightdirloc = glGetUniformLocation(ambient_prog, "light_direction");
-	glUniform3fv(lightdirloc, 1, glm::value_ptr(global_light_direction));
-	
-
+	int offset = 0;
+	for (auto i : scene_->getAllDirectionalLights())
+	{
+		glBindBuffer(GL_UNIFORM_BUFFER, Light_UBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(Lights), &lights_[i.getId()]);
+		offset += sizeof(Lights);
+	}
 	glBindVertexArray(light_quad_mesh_.vao);
 	//stencil test
-	glEnable(GL_STENCIL_TEST);
-	glStencilFunc(GL_NOTEQUAL, 0, ~0);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	
+	// draw quad
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4); // draw quad
 
 }
-void MyView::LightPass(Lights light, unsigned int element_count, unsigned int element_offset, std::vector<SceneModel::InstanceId> instances)
+void MyView::LightPass()
 {
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_EQUAL);
+	//bind lbuffer as framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, lbuffer_fbo);
+	// set stencil to equal 128 NO WRITE
+	glStencilFunc(GL_EQUAL, 128, ~0);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	//disable depth
+	glDisable(GL_DEPTH);
+	//enable blend to addative
+	glEnable(GL_BLEND);
 	glBlendEquation(GL_FUNC_ADD);
 	glBlendFunc(GL_ONE, GL_ONE);
-
-	glBindBuffer(GL_UNIFORM_BUFFER, Light_UBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights), &light, GL_STREAM_DRAW);
-
-	auto totaloffset = 0;
-	for (auto j : instances)
+	//bind gbuffer textures to tex units
+	glUseProgram(light_prog);
+	GLint sampposloc = glGetUniformLocation(ambient_prog, "sampler_world_position");
+	GLint sampnorloc = glGetUniformLocation(ambient_prog, "sampler_world_normal");
+	glUniform1ui(sampposloc, 1);
+	glUniform1ui(sampnorloc, 1);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex);
+	int offset = 0;
+	for (auto i : scene_->getAllPointLights())
 	{
-		glBindBuffer(GL_UNIFORM_BUFFER, Instance_BO);
-		glBufferSubData(GL_UNIFORM_BUFFER, totaloffset, sizeof(Per_Instance), &per_instance_.find(j)->second);
-		totaloffset += sizeof(Per_Instance);
+		glBindBuffer(GL_UNIFORM_BUFFER, Light_UBO);
+		glBufferSubData(GL_UNIFORM_BUFFER,offset,sizeof(Lights), &lights_[i.getId()]);
+		offset += sizeof(Lights);
 	}
-	glDrawElementsInstanced(GL_TRIANGLES, element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(element_offset), instances.size());
+	glBindVertexArray(light_sphere_mesh_.vao);
+	glDrawElementsInstanced(GL_TRIANGLES,light_sphere_mesh_.element_count,GL_UNSIGNED_INT,0,scene_->getAllPointLights().size());
+	offset = 0;
+	for (auto i : scene_->getAllSpotLights())
+	{
+		glBindBuffer(GL_UNIFORM_BUFFER, Light_UBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(Lights), &lights_[i.getId()]);
+		offset += sizeof(Lights);
+	}
+	//loop through light models
+	glBindVertexArray(light_cone_mesh_.vao);
+	glDrawElementsInstanced(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0, scene_->getAllSpotLights().size());
+	
+	
+	//auto totaloffset = 0;
+	//	glBindBuffer(GL_UNIFORM_BUFFER, Instance_BO);
+	//	glBufferSubData(GL_UNIFORM_BUFFER, totaloffset, sizeof(Per_Instance), &per_instance_.find(j)->second);
+	//	totaloffset += sizeof(Per_Instance);
+	//glDrawElementsInstanced(GL_TRIANGLES, element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(element_offset), instances.size());
 
 }
 void MyView::SetUniforms(GLuint shader, glm::mat4 view_xform, glm::mat4 projection_xform)

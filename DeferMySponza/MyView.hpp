@@ -35,7 +35,6 @@ private:
     void
     windowViewRender(std::shared_ptr<tygra::Window> window) override;
 
-    std::shared_ptr<const SceneModel::Context> scene_;
 
 	struct Mesh
 	{
@@ -49,6 +48,18 @@ private:
 			normal_offset(0),
 			element_offset(0),
 			element_count(0){}
+	};
+	struct LightMesh
+	{
+		GLuint vertex_vbo;
+		GLuint element_vbo;
+		GLuint vao;
+		int element_count;
+
+		LightMesh() : vertex_vbo(0),
+			element_vbo(0),
+			vao(0),
+			element_count(0) {}
 	};
 	struct Lights
 	{
@@ -89,9 +100,9 @@ private:
 	void
 		gbufferPass();
 	void
-		ambientPass(unsigned int element_count, unsigned int element_offset, std::vector<SceneModel::InstanceId> instances);
+		ambientPass();
 	void
-		LightPass(Lights light, unsigned int element_count, unsigned int element_offset, std::vector<SceneModel::InstanceId> instances);
+		LightPass();
 	void
 		SetUniforms(GLuint shader, glm::mat4 View, glm::mat4 Projection);
 	void
@@ -103,21 +114,29 @@ private:
 	std::shared_ptr<const SceneModel::Context> scene_;
 	std::shared_ptr<SceneModel::GeometryBuilder> geometry_;
 
-	//GLuint shader_program;
+	LightMesh light_quad_mesh_; 
+	LightMesh light_sphere_mesh_;
+	LightMesh light_cone_mesh_;
 	GLuint gbuffer_prog;
-	//GLuint ambient_prog;
-	//GLuint light_prog;
+	GLuint ambient_prog;
+	GLuint light_prog;
 	GLuint gbuffer_vertex_shader;
 	GLuint gbuffer_fragment_shader;
-	//GLuint ambient_vertex_shader;
-	//GLuint ambient_frag_shader;
-	//GLuint light_vertex_shader;
-	//GLuint light_frag_shader;
+	GLuint ambient_vertex_shader;
+	GLuint ambient_frag_shader;
+	GLuint light_vertex_shader;
+	GLuint light_frag_shader;
 	GLuint VAO;
 	GLuint VBO;
 	GLuint EBO;
 	GLuint Light_UBO;
 	GLuint Instance_BO;
+	GLuint lbuffer_fbo;
+	GLuint lbuffer_colour_rbo;
+	GLuint gbuffer_position_tex;
+	GLuint gbuffer_normal_tex;
+	GLuint gbuffer_fbo;
+
 	std::unordered_map<SceneModel::MeshId, Mesh> mesh_;
 	std::unordered_map<SceneModel::InstanceId, Per_Instance> per_instance_;
 	std::unordered_map<SceneModel::LightId, Lights> lights_;
