@@ -70,10 +70,6 @@ private:
 		glm::vec3 direction;
 		int pad;
 		bool shadows;
-		int padd1;
-		int padd2;
-		int padd3;
-		bool is_direction;
 
 		Lights() :
 			position(0),
@@ -81,8 +77,7 @@ private:
 			direction(0),
 			range(0),
 			coneangledegrees(0),
-			shadows(false),
-			is_direction(false) {}
+			shadows(false) {}
 	};
 	struct Per_Instance
 	{
@@ -98,11 +93,11 @@ private:
 			shininess(0){}
 	};
 	void
-		gbufferPass();
+		gbufferPass(glm::mat4 view, glm::mat4 projection);
 	void
-		ambientPass();
+		ambientPass(glm::mat4 view, glm::mat4 projection);
 	void
-		LightPass();
+		LightPass(glm::mat4 view, glm::mat4 projection);
 	void
 		SetUniforms(GLuint shader, glm::mat4 View, glm::mat4 Projection);
 	void

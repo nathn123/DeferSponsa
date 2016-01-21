@@ -131,7 +131,7 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 
 	//light shaders
 
-
+	geometry_ = std::make_shared<SceneModel::GeometryBuilder>();
 	unsigned int totaloffset = 0;
 	unsigned int totalelementoffset = 0;
 	unsigned int maximum_instance = 0;
@@ -285,11 +285,11 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 	// draw to GBuffer
 	SetUniforms(gbuffer_prog, view, projection);
 	glBindVertexArray(VAO);
-	gbufferPass();
+	gbufferPass(view,projection);
 	//ambient directional lights pass back buffer
-	ambientPass();
+	ambientPass(view, projection);
 	//light pass back buffer
-	LightPass();
+	LightPass(view, projection);
 	//post
 
 	//switch buffer
@@ -297,7 +297,7 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, 1280, 720, 0, 0, 1280, 720, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 }
-void MyView::gbufferPass()
+void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 {
 	// set framebuffer to gbuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fbo);
@@ -318,6 +318,7 @@ void MyView::gbufferPass()
 	//loop drawing
 	
 	glUseProgram(gbuffer_prog);
+	SetUniforms(gbuffer_prog, view, projection);
 	for (auto i : geometry_->getAllMeshes())
 	{
 		auto mesh = mesh_.find(i.getId())->second;
@@ -333,7 +334,7 @@ void MyView::gbufferPass()
 	}
 }
 
-void MyView::ambientPass()
+void MyView::ambientPass(glm::mat4 view, glm::mat4 projection)
 {
 	//bind lbuffer as framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, lbuffer_fbo);
@@ -349,32 +350,23 @@ void MyView::ambientPass()
 	glDisable(GL_BLEND);
 	//bind gbuffer textures
 	glUseProgram(ambient_prog);
-	GLint sampposloc = glGetUniformLocation(ambient_prog, "sampler_world_position");
-	GLint sampnorloc = glGetUniformLocation(ambient_prog, "sampler_world_normal");
+	GLint sampposloc = glGetUniformLocation(ambient_prog, "world_position");
+	GLint sampnorloc = glGetUniformLocation(ambient_prog, "world_normal");
+	GLint ambientlight = glGetUniformLocation(ambient_prog, "ambient_light");
+	glUniform3fv(ambientlight,1,glm::value_ptr(scene_->getAmbientLightIntensity()));
 	glUniform1ui(sampposloc, 1);
 	glUniform1ui(sampnorloc, 1);
+	SetUniforms(gbuffer_prog, view, projection);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex);
-
-
-	// load all dir lights
-	int offset = 0;
-	for (auto i : scene_->getAllDirectionalLights())
-	{
-		glBindBuffer(GL_UNIFORM_BUFFER, Light_UBO);
-		glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(Lights), &lights_[i.getId()]);
-		offset += sizeof(Lights);
-	}
-	glBindVertexArray(light_quad_mesh_.vao);
-	//stencil test
 	
 	// draw quad
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4); // draw quad
 
 }
-void MyView::LightPass()
+void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 {
 	//bind lbuffer as framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, lbuffer_fbo);
@@ -393,11 +385,23 @@ void MyView::LightPass()
 	GLint sampnorloc = glGetUniformLocation(ambient_prog, "sampler_world_normal");
 	glUniform1ui(sampposloc, 1);
 	glUniform1ui(sampnorloc, 1);
+	SetUniforms(gbuffer_prog, view, projection);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex);
+	//loop through light models
+	// load all dir lights
 	int offset = 0;
+	for (auto i : scene_->getAllDirectionalLights())
+	{
+		glBindBuffer(GL_UNIFORM_BUFFER, Light_UBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(Lights), &lights_[i.getId()]);
+		offset += sizeof(Lights);
+	}
+	glBindVertexArray(light_quad_mesh_.vao);
+	glDrawElementsInstanced(GL_TRIANGLES, light_quad_mesh_.element_count, GL_UNSIGNED_INT, 0, scene_->getAllDirectionalLights().size());
+	offset = 0;
 	for (auto i : scene_->getAllPointLights())
 	{
 		glBindBuffer(GL_UNIFORM_BUFFER, Light_UBO);
@@ -413,7 +417,6 @@ void MyView::LightPass()
 		glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(Lights), &lights_[i.getId()]);
 		offset += sizeof(Lights);
 	}
-	//loop through light models
 	glBindVertexArray(light_cone_mesh_.vao);
 	glDrawElementsInstanced(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0, scene_->getAllSpotLights().size());
 	
@@ -443,7 +446,6 @@ void MyView::UpdateLights()
 		Lights newlight;
 		newlight.direction = i.getDirection();
 		newlight.intensity = i.getIntensity();
-		newlight.is_direction = true;
 		lights_.insert(std::make_pair(i.getId(), newlight));
 	}
 	for (auto i : scene_->getAllPointLights())
