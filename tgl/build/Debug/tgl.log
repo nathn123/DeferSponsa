@@ -1,4 +1,4 @@
-﻿Build started 21/01/2016 20:19:09.
+﻿Build started 22/01/2016 14:05:57.
      1>Project "C:\Users\m2087350\Desktop\Defer\trunk\tgl\tgl.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Iinclude /IC:\Users\m2087350\Desktop\Defer\trunk\external/include /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D TGL_EXPORTS /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"build\Debug\\" /Fd"lib\Win32\v120\Debug\tgl.pdb" /Gd /TC /analyze- /errorReport:prompt src\tgl.c
@@ -250,4 +250,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:01.25
+Time Elapsed 00:00:00.87

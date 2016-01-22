@@ -13,8 +13,11 @@ in ivec4 gl_FragCoord;
 in vec3 varying_normal;
 in vec3 varying_position;
 
+out vec3 fragment_position;
+out vec3 fragment_normal;
+
 void main(void)
 {
-	gl_FragData[0] = varying_position; // write position to texture
-	gl_FragData[1] = varying_normal; // write normal to texture
+	fragment_position = varying_position; // write position to texture
+	fragment_normal = varying_normal; // write normal to texture
 }

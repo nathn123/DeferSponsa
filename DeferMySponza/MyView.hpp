@@ -101,7 +101,7 @@ private:
 	void
 		SetUniforms(GLuint shader, glm::mat4 View, glm::mat4 Projection);
 	void
-		UpdateLights();
+		UpdateLights(bool firstrun);
 
 	bool
 		CreateShader(GLuint shader_program, GLuint shader, std::string shader_name, std::vector<std::string> attriblocations, GLenum shadertype);

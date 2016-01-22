@@ -1,4 +1,4 @@
-﻿Build started 21/01/2016 20:19:11.
+﻿Build started 22/01/2016 14:05:58.
      1>Project "C:\Users\m2087350\Desktop\Defer\trunk\tygra\tygra.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Iinclude /IC:\Users\m2087350\Desktop\Defer\trunk\external/include /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _LIB /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"build\Debug\\" /Fd"lib\Win32\v120\Debug\tygra.pdb" /Gd /TP /analyze- /errorReport:prompt src\FileHelper.cpp src\Window.cpp
@@ -30,4 +30,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:01.03
+Time Elapsed 00:00:01.05

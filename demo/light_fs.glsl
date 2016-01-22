@@ -14,13 +14,12 @@ uniform Lights
 	bool Shadows;
 };
 
-in ivec4 gl_FragCoord;
 out vec3 finalcolour;
 
 void main(void)
 {
-	vec3 fragNor = texelFetch(sampler_world_normal, gl_FragCoord.xy).xyz;
-	vec3 fragPos = texelFetch(sampler_world_position, gl_FragCoord.xy).xyz;
+	vec3 fragNor = texelFetch(sampler_world_normal,ivec2( gl_FragCoord.xy)).xyz;
+	vec3 fragPos = texelFetch(sampler_world_position, ivec2(gl_FragCoord.xy)).xyz;
 	vec3 final_colour = vec3(0.0);
 	if (Lights.Range != 0)
 	{

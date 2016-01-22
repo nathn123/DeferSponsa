@@ -1,4 +1,4 @@
-﻿Build started 21/01/2016 20:19:11.
+﻿Build started 22/01/2016 14:05:58.
      1>Project "C:\Users\m2087350\Desktop\Defer\trunk\SceneModel\SceneModel.vcxproj" on node 3 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Iinclude /IC:\Users\m2087350\Desktop\Defer\trunk\external/include /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _LIB /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"build\Debug\\" /Fd"lib\Win32\v120\Debug\SceneModel.pdb" /Gd /TP /analyze- /errorReport:prompt src\Camera.cpp src\Context.cpp src\DirectionalLight.cpp src\GeometryBuilder.cpp src\Instance.cpp src\Material.cpp src\Mesh.cpp src\PointLight.cpp src\SpotLight.cpp
@@ -28,8 +28,8 @@
          xcopy /E /S /I /Y "include" "C:\Users\m2087350\Desktop\Defer\trunk\external\include"
          xcopy /E /S /I /Y "lib" "C:\Users\m2087350\Desktop\Defer\trunk\external\lib"
          :VCEnd
-         0 File(s) copied
          File not found - doc
+         0 File(s) copied
          include\SceneModel\Camera.hpp
          include\SceneModel\Context.hpp
          include\SceneModel\DirectionalLight.hpp
@@ -49,4 +49,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:04.77
+Time Elapsed 00:00:04.52
