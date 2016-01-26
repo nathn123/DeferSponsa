@@ -29,4 +29,5 @@ void main(void)
     varying_specular = specular;
 	varying_shininess = shininess;
 	gl_Position = projection_xform*view_xform * model_xform *vec4(vertex_position, 1.0);
+
 }

@@ -104,7 +104,7 @@ private:
 		UpdateLights(bool firstrun);
 
 	bool
-		CreateShader(GLuint shader_program, GLuint shader, std::string shader_name, std::vector<std::string> attriblocations, GLenum shadertype);
+		CreateShader(GLuint shader_program, GLuint shader, std::string shader_name, std::vector<std::string> attriblocations, GLenum shadertype, std::vector<std::string> fragdatalocations = std::vector<std::string>());
 
 	std::shared_ptr<const SceneModel::Context> scene_;
 	std::shared_ptr<SceneModel::GeometryBuilder> geometry_;

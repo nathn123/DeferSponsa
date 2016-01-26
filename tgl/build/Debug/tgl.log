@@ -1,15 +1,11 @@
-﻿Build started 26/01/2016 06:04:32.
-     1>Project "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\tgl\tgl.vcxproj" on node 2 (Build target(s)).
-     1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Iinclude /I"C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\external/include" /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D TGL_EXPORTS /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"build\Debug\\" /Fd"lib\Win32\v120\Debug\tgl.pdb" /Gd /TC /analyze- /errorReport:prompt src\tgl.c
-         tgl.c
-       Lib:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\Lib.exe /OUT:"lib\Win32\v120\Debug\tgl.lib" /NOLOGO build\Debug\tgl.obj
-         tgl.vcxproj -> C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\tgl\lib\Win32\v120\Debug\tgl.lib
+﻿Build started 26/01/2016 10:22:54.
+     1>Project "C:\Users\m2087350\Desktop\defer\trunk\tgl\tgl.vcxproj" on node 2 (Build target(s)).
+     1>Lib:
+         tgl.vcxproj -> C:\Users\m2087350\Desktop\defer\trunk\tgl\lib\Win32\v120\Debug\tgl.lib
        PostBuildEvent:
-         xcopy /E /S /I /Y "doc" "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\external\doc"
-         xcopy /E /S /I /Y "include" "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\external\include"
-         xcopy /E /S /I /Y "lib" "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\external\lib"
+         xcopy /E /S /I /Y "doc" "C:\Users\m2087350\Desktop\defer\trunk\external\doc"
+         xcopy /E /S /I /Y "include" "C:\Users\m2087350\Desktop\defer\trunk\external\include"
+         xcopy /E /S /I /Y "lib" "C:\Users\m2087350\Desktop\defer\trunk\external\lib"
          :VCEnd
          doc\glm.txt
          1 File(s) copied
@@ -246,8 +242,8 @@
          lib\Win32\v120\Debug\tgl.lib
          lib\Win32\v120\Debug\tgl.pdb
          2 File(s) copied
-     1>Done Building Project "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\tgl\tgl.vcxproj" (Build target(s)).
+     1>Done Building Project "C:\Users\m2087350\Desktop\defer\trunk\tgl\tgl.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:01.26
+Time Elapsed 00:00:00.31
