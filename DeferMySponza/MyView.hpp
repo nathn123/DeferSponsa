@@ -130,6 +130,9 @@ private:
 	GLuint lbuffer_colour_rbo;
 	GLuint gbuffer_position_tex;
 	GLuint gbuffer_normal_tex;
+	GLuint gbuffer_diffuse_tex;
+	GLuint gbuffer_specular_tex;
+	GLuint gbuffer_shininess_tex;
 	GLuint gbuffer_fbo;
 
 	std::unordered_map<SceneModel::MeshId, Mesh> mesh_;

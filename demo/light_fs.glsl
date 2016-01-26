@@ -3,6 +3,11 @@
 
 uniform sampler2DRect sampler_world_normal;
 uniform sampler2DRect sampler_world_position;
+uniform sampler2DRect sampler_world_diffuse;
+uniform sampler2DRect sampler_world_specular;
+uniform sampler2DRect sampler_world_shininess;
+uniform mat4 projection_xform;
+uniform mat4 view_xform;
 
 uniform Lights
 {
@@ -14,14 +19,17 @@ uniform Lights
 	bool Shadows;
 };
 
-out vec3 finalcolour;
+out vec4 fragment_colour;
 
 void main(void)
 {
 	vec3 fragNor = texelFetch(sampler_world_normal,ivec2( gl_FragCoord.xy)).xyz;
 	vec3 fragPos = texelFetch(sampler_world_position, ivec2(gl_FragCoord.xy)).xyz;
+	vec3 diffuse = texelFetch(sampler_world_diffuse, ivec2(gl_FragCoord.xy)).xyz;
+	vec3 Specular = texelFetch(sampler_world_specular, ivec2(gl_FragCoord.xy)).xyz;
+	float shininess = texelFetch(sampler_world_shininess, ivec2(gl_FragCoord.xy)).x;
 	vec3 final_colour = vec3(0.0);
-	if (Lights.Range != 0)
+	if (Range != 0)
 	{
 		// initials specular diffuse and ambient
 		vec3 Is = vec3(0.0);
@@ -44,7 +52,7 @@ void main(void)
 
 		// material
 		vec3 Ks = vec3(0.0);
-		if (Is_shiny == true)
+		if (shininess >0)
 			Ks = Specular;
 		else
 			Ks = vec3(1.0);
@@ -85,7 +93,7 @@ void main(void)
 	}
 	else
 	{
-		final_colour = Lights.Intensity;
+		final_colour =  Intensity;
 	}
 
 	fragment_colour += vec4(final_colour, 1.0);

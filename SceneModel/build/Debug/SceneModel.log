@@ -1,7 +1,7 @@
-﻿Build started 22/01/2016 14:05:58.
-     1>Project "C:\Users\m2087350\Desktop\Defer\trunk\SceneModel\SceneModel.vcxproj" on node 3 (Build target(s)).
+﻿Build started 26/01/2016 06:04:34.
+     1>Project "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\SceneModel\SceneModel.vcxproj" on node 3 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Iinclude /IC:\Users\m2087350\Desktop\Defer\trunk\external/include /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _LIB /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"build\Debug\\" /Fd"lib\Win32\v120\Debug\SceneModel.pdb" /Gd /TP /analyze- /errorReport:prompt src\Camera.cpp src\Context.cpp src\DirectionalLight.cpp src\GeometryBuilder.cpp src\Instance.cpp src\Material.cpp src\Mesh.cpp src\PointLight.cpp src\SpotLight.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Iinclude /I"C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\external/include" /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _LIB /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"build\Debug\\" /Fd"lib\Win32\v120\Debug\SceneModel.pdb" /Gd /TP /analyze- /errorReport:prompt src\Camera.cpp src\Context.cpp src\DirectionalLight.cpp src\GeometryBuilder.cpp src\Instance.cpp src\Material.cpp src\Mesh.cpp src\PointLight.cpp src\SpotLight.cpp
          Camera.cpp
          Context.cpp
          DirectionalLight.cpp
@@ -22,14 +22,14 @@
          build\Debug\Mesh.obj
          build\Debug\PointLight.obj
          build\Debug\SpotLight.obj
-         SceneModel.vcxproj -> C:\Users\m2087350\Desktop\Defer\trunk\SceneModel\lib\Win32\v120\Debug\SceneModel.lib
+         SceneModel.vcxproj -> C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\SceneModel\lib\Win32\v120\Debug\SceneModel.lib
        PostBuildEvent:
-         xcopy /E /S /I /Y "doc" "C:\Users\m2087350\Desktop\Defer\trunk\external\doc"
-         xcopy /E /S /I /Y "include" "C:\Users\m2087350\Desktop\Defer\trunk\external\include"
-         xcopy /E /S /I /Y "lib" "C:\Users\m2087350\Desktop\Defer\trunk\external\lib"
+         xcopy /E /S /I /Y "doc" "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\external\doc"
+         xcopy /E /S /I /Y "include" "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\external\include"
+         xcopy /E /S /I /Y "lib" "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\external\lib"
          :VCEnd
-         File not found - doc
          0 File(s) copied
+         File not found - doc
          include\SceneModel\Camera.hpp
          include\SceneModel\Context.hpp
          include\SceneModel\DirectionalLight.hpp
@@ -45,8 +45,8 @@
          lib\Win32\v120\Debug\SceneModel.lib
          lib\Win32\v120\Debug\scenemodel.pdb
          2 File(s) copied
-     1>Done Building Project "C:\Users\m2087350\Desktop\Defer\trunk\SceneModel\SceneModel.vcxproj" (Build target(s)).
+     1>Done Building Project "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\SceneModel\SceneModel.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:04.52
+Time Elapsed 00:00:03.88

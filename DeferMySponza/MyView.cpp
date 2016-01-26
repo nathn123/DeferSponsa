@@ -121,7 +121,7 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 
 	//gbuffer shaders
 	std::vector<std::string>gvertex_attrib = { "vertex_position", "vertex_normal"};
-	std::vector<std::string>gfragment_attrib = { "fragment_position","fragment_normal"};
+	std::vector<std::string>gfragment_attrib = { "fragment_position", "fragment_normal", "fragment_diffuse", "fragment_specular","fragment_shininess" };
 	gbuffer_prog = glCreateProgram();
 	CreateShader(gbuffer_prog,gbuffer_vertex_shader, "gbuffer_vs.glsl", gvertex_attrib, GL_VERTEX_SHADER);
 	CreateShader(gbuffer_prog, gbuffer_fragment_shader, "gbuffer_fs.glsl", gfragment_attrib, GL_FRAGMENT_SHADER);
@@ -243,10 +243,16 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	glGenFramebuffers(1, &lbuffer_fbo);
 	glGenFramebuffers(1, &gbuffer_fbo);
 	glGenRenderbuffers(1, &lbuffer_colour_rbo);
-	glGenTextures(1, &gbuffer_normal_tex);
-	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex);
 	glGenTextures(1, &gbuffer_position_tex);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
+	glGenTextures(1, &gbuffer_normal_tex);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex);
+	glGenTextures(1, &gbuffer_diffuse_tex);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_diffuse_tex);
+	glGenTextures(1, &gbuffer_specular_tex);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_specular_tex);
+	glGenTextures(1, &gbuffer_shininess_tex);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_shininess_tex);
 	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 }
 
@@ -272,18 +278,36 @@ windowViewDidReset(std::shared_ptr<tygra::Window> window,
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fbo);
+
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
 	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB8, width, height, 0, GL_RGB, GL_FLOAT, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE, gbuffer_position_tex, 0);
+
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex);
 	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB8, width, height, 0, GL_RGB, GL_FLOAT, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_RECTANGLE, gbuffer_normal_tex, 0);
-	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
-	framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_diffuse_tex);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB8, width, height, 0, GL_RGB, GL_FLOAT, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_RECTANGLE, gbuffer_diffuse_tex, 0);
+
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_specular_tex);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB8, width, height, 0, GL_RGB, GL_FLOAT, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_RECTANGLE, gbuffer_specular_tex, 0);
+
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_shininess_tex);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB8, width, height, 0, GL_RGB, GL_FLOAT, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_RECTANGLE, gbuffer_shininess_tex, 0);/**/
+
+	
+	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+
+	framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (framebuffer_status != GL_FRAMEBUFFER_COMPLETE) {
 		tglDebugMessage(GL_DEBUG_SEVERITY_HIGH_ARB, "framebuffer not complete");
 	}
+	
+
 }
 
 void MyView::
@@ -377,13 +401,12 @@ void MyView::ambientPass(glm::mat4 view, glm::mat4 projection)
 	glDisable(GL_BLEND);
 	//bind gbuffer textures
 	glUseProgram(ambient_prog);
-	GLint sampposloc = glGetUniformLocation(ambient_prog, "world_position");
-	GLint sampnorloc = glGetUniformLocation(ambient_prog, "world_normal");
 	GLint ambientlight = glGetUniformLocation(ambient_prog, "ambient_light");
 	glUniform3fv(ambientlight,1,glm::value_ptr(scene_->getAmbientLightIntensity()));
-	glUniform1ui(sampposloc, 1);
-	glUniform1ui(sampnorloc, 1);
-	SetUniforms(gbuffer_prog, view, projection);
+	SetUniforms(ambient_prog, view, projection);
+
+	glBindVertexArray(light_quad_mesh_.vao);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
 	glActiveTexture(GL_TEXTURE1);
@@ -410,8 +433,14 @@ void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 	glUseProgram(light_prog);
 	GLint sampposloc = glGetUniformLocation(light_prog, "sampler_world_position");
 	GLint sampnorloc = glGetUniformLocation(light_prog, "sampler_world_normal");
+	GLint sampdifloc = glGetUniformLocation(light_prog, "sampler_world_diffuse");
+	GLint sampspeloc = glGetUniformLocation(light_prog, "sampler_world_specular");
+	GLint sampshiloc = glGetUniformLocation(light_prog, "sampler_world_shininess");
 	glUniform1ui(sampposloc, 1);
 	glUniform1ui(sampnorloc, 1);
+	glUniform1ui(sampdifloc, 1);
+	glUniform1ui(sampspeloc, 1);
+	glUniform1ui(sampshiloc, 1);
 	SetUniforms(gbuffer_prog, view, projection);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
@@ -476,6 +505,7 @@ void MyView::UpdateLights(bool firstrun)
 		Lights newlight;
 		newlight.direction = i.getDirection();
 		newlight.intensity = i.getIntensity();
+		
 		lights_.insert(std::make_pair(i.getId(), newlight));
 	}
 	for (auto i : scene_->getAllPointLights())
