@@ -173,12 +173,16 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	}
 
 	// create empty buffer
-
+	
+	Instance_BO_bufferIndex = glGetUniformBlockIndex(gbuffer_prog, "Instance");
+	Instance_BO_bufferpointindex = 1;
 	glGenBuffers(1, &Instance_BO);
 	glBindBuffer(GL_UNIFORM_BUFFER, Instance_BO);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(Per_Instance)*maximum_instance, nullptr, GL_STREAM_DRAW);
+	glUniformBlockBinding(gbuffer_prog, Instance_BO_bufferIndex, Instance_BO_bufferpointindex);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-	UpdateLights(true);
+	//UpdateLights(true);
 
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -330,11 +334,11 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 	auto view = glm::lookAt(camera.getPosition(), camera.getPosition() + camera.getDirection(), scene_->getUpDirection());
 	auto projection = glm::perspective(camera.getVerticalFieldOfViewInDegrees(), aspect, camera.getNearPlaneDistance(), camera.getFarPlaneDistance());
 
-	UpdateLights(false);
+	//UpdateLights(false);
 	// draw to GBuffer
 	gbufferPass(view,projection);
 	//ambient directional lights pass back buffer
-	ambientPass(view, projection);
+	//ambientPass(view, projection);
 	//light pass back buffer
 	//LightPass(view, projection);
 	//post
@@ -377,6 +381,7 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 	SetUniforms(gbuffer_prog, view, projection);
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBindBufferBase(GL_UNIFORM_BUFFER, Instance_BO_bufferpointindex, Instance_BO);
 	for (auto i : geometry_->getAllMeshes())
 	{
 		auto mesh = mesh_.find(i.getId())->second;
@@ -384,10 +389,11 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 		auto totaloffset = 0;
 		for (auto j : instances)
 		{
-			glBindBuffer(GL_UNIFORM_BUFFER, Instance_BO);
-			glBufferSubData(GL_UNIFORM_BUFFER, totaloffset, sizeof(Per_Instance), &per_instance_.find(j)->second);
+			Per_Instance* currentval = new Per_Instance(per_instance_.find(j)->second);
+			glBufferSubData(GL_UNIFORM_BUFFER, totaloffset, sizeof(Per_Instance), &currentval);
 			totaloffset += sizeof(Per_Instance);
 		}
+		
 		glDrawElementsInstanced(GL_TRIANGLES, mesh.element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(mesh.element_offset), instances.size());
 	}
 }

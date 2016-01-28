@@ -126,6 +126,8 @@ private:
 	GLuint EBO;
 	GLuint Light_UBO;
 	GLuint Instance_BO;
+	GLuint Instance_BO_bufferIndex;
+	GLuint Instance_BO_bufferpointindex;
 	GLuint lbuffer_fbo;
 	GLuint lbuffer_colour_rbo;
 	GLuint gbuffer_position_tex;

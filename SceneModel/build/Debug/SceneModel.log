@@ -1,31 +1,5 @@
-﻿Build started 26/01/2016 10:23:07.
-     1>Project "C:\Users\m2087350\Desktop\defer\trunk\SceneModel\SceneModel.vcxproj" on node 3 (Build target(s)).
-     1>Lib:
-         SceneModel.vcxproj -> C:\Users\m2087350\Desktop\defer\trunk\SceneModel\lib\Win32\v120\Debug\SceneModel.lib
-       PostBuildEvent:
-         xcopy /E /S /I /Y "doc" "C:\Users\m2087350\Desktop\defer\trunk\external\doc"
-         xcopy /E /S /I /Y "include" "C:\Users\m2087350\Desktop\defer\trunk\external\include"
-         xcopy /E /S /I /Y "lib" "C:\Users\m2087350\Desktop\defer\trunk\external\lib"
-         :VCEnd
-         0 File(s) copied
-         File not found - doc
-         include\SceneModel\Camera.hpp
-         include\SceneModel\Context.hpp
-         include\SceneModel\DirectionalLight.hpp
-         include\SceneModel\GeometryBuilder.hpp
-         include\SceneModel\Instance.hpp
-         include\SceneModel\Material.hpp
-         include\SceneModel\Mesh.hpp
-         include\SceneModel\PointLight.hpp
-         include\SceneModel\SceneModel.hpp
-         include\SceneModel\SceneModel_fwd.hpp
-         include\SceneModel\SpotLight.hpp
-         11 File(s) copied
-         lib\Win32\v120\Debug\SceneModel.lib
-         lib\Win32\v120\Debug\scenemodel.pdb
-         2 File(s) copied
-     1>Done Building Project "C:\Users\m2087350\Desktop\defer\trunk\SceneModel\SceneModel.vcxproj" (Build target(s)).
+﻿Build started 28/01/2016 17:23:25.
 
 Build succeeded.
 
-Time Elapsed 00:00:00.15
+Time Elapsed 00:00:00.03

@@ -2,14 +2,13 @@
 
 uniform mat4 projection_xform;
 uniform mat4 view_xform;
-uniform Instance
+layout(std140) uniform Instance
 {
 	mat4 model_xform;
 	vec3 specular;
 	float shininess;
 	vec3 diffuse;
 };
-
 
 in vec3 vertex_position;
 in vec3 vertex_normal;
