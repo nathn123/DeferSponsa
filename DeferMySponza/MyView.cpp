@@ -118,9 +118,8 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	}
 
 	//create the shaders
-
 	//gbuffer shaders
-	std::vector<std::string>gvertex_attrib = { "vertex_position", "vertex_normal"};
+	std::vector<std::string>gvertex_attrib = { "vertex_position", "vertex_normal", "diffuse", "specular", "shininess", "model_xform" };
 	std::vector<std::string>gfragment_attrib = { "fragment_position", "fragment_normal", "fragment_diffuse", "fragment_specular","fragment_shininess" };
 	gbuffer_prog = glCreateProgram();
 	CreateShader(gbuffer_prog,gbuffer_fragment_shader, "gbuffer_fs.glsl", std::vector<std::string>(), GL_FRAGMENT_SHADER, gfragment_attrib);
@@ -173,20 +172,15 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	}
 
 	// create empty buffer
-	
-	Instance_BO_bufferIndex = glGetUniformBlockIndex(gbuffer_prog, "Instance");
-	Instance_BO_bufferpointindex = 1;
-	glGenBuffers(1, &Instance_BO);
-	glBindBuffer(GL_UNIFORM_BUFFER, Instance_BO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(Per_Instance)*maximum_instance, nullptr, GL_STREAM_DRAW);
-	glUniformBlockBinding(gbuffer_prog, Instance_BO_bufferIndex, Instance_BO_bufferpointindex);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	//UpdateLights(true);
 
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, totaloffset, nullptr, GL_STATIC_DRAW);
+	glGenBuffers(1, &IBO);
+	glBindBuffer(GL_ARRAY_BUFFER, IBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Per_Instance)* maximum_instance, nullptr, GL_STREAM_DRAW);
 	glGenBuffers(1, &EBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, totalelementoffset, nullptr, GL_STATIC_DRAW);
@@ -213,36 +207,40 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	glGenVertexArrays(1, &VAO);
 	//bind VAO
 	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, IBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	//set up attribute locations
 	GLuint position_location = glGetAttribLocation(gbuffer_prog, "vertex_position");
 	GLuint normal_location = glGetAttribLocation(gbuffer_prog, "vertex_normal");
 
-	/*GLuint model_xform_location_li = glGetAttribLocation(light_prog, "Model_xform");
-	GLuint diffuse_location = glGetAttribLocation(light_prog, "Diffuse");
-	GLuint specular_location = glGetAttribLocation(light_prog, "Specular");
-	GLuint shininess_location = glGetAttribLocation(light_prog, "Shininess");
-	GLuint shiny_location = glGetAttribLocation(light_prog, "Is_Shiny");*/
-
+	
 	//Enable attrib array
-	glEnableVertexAttribArray(position_location);
-	glVertexAttribPointer(position_location, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
-	glVertexAttribDivisor(position_location, 1); // this makes it instanced
-	glEnableVertexAttribArray(normal_location);
-	glVertexAttribPointer(normal_location, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), TGL_BUFFER_OFFSET(mesh_.begin()->second.normal_offset));
-	glVertexAttribDivisor(normal_location, 1);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
 
-	//glEnableVertexAttribArray(model_xform_location_li);
-	//glVertexAttribPointer(model_xform_location_li, 16, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), 0);
-	//glVertexAttribDivisor(model_xform_location_li, 1);
-	//glEnableVertexAttribArray(diffuse_location);
-	//glVertexAttribPointer(diffuse_location, 3, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), TGL_BUFFER_OFFSET(sizeof(glm::mat4) + sizeof(glm::vec3) + sizeof(float)));
-	//glVertexAttribDivisor(diffuse_location, 1);
-	//glEnableVertexAttribArray(specular_location);
-	//glVertexAttribPointer(specular_location, 3, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), TGL_BUFFER_OFFSET(sizeof(glm::mat4)));
-	//glVertexAttribDivisor(specular_location, 1);
-	//glEnableVertexAttribArray(shininess_location);
-	//glVertexAttribPointer(shininess_location, 1, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), TGL_BUFFER_OFFSET(sizeof(glm::mat4) + sizeof(glm::vec3)));
-	//glVertexAttribDivisor(shininess_location, 1);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), TGL_BUFFER_OFFSET(mesh_.begin()->second.normal_offset));
+
+	glBindBuffer(GL_ARRAY_BUFFER, IBO);
+
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), TGL_BUFFER_OFFSET(sizeof(glm::mat4) + sizeof(glm::vec3) + sizeof(float)));
+	glVertexAttribDivisor(2, 1);
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), TGL_BUFFER_OFFSET(sizeof(glm::mat4)));
+	glVertexAttribDivisor(3, 1);
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), TGL_BUFFER_OFFSET(sizeof(glm::mat4)+ sizeof(glm::vec3)));
+	glVertexAttribDivisor(4, 1);
+
+	for (int i = 0; i < 4; ++i)
+	{
+		glEnableVertexAttribArray(5 + i);
+		glVertexAttribPointer(5 + i, 4, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), TGL_BUFFER_OFFSET(sizeof(glm::vec4) * i));
+		glVertexAttribDivisor(5 + i, 1);
+	}
 
 	glGenFramebuffers(1, &lbuffer_fbo);
 	glGenFramebuffers(1, &gbuffer_fbo);
@@ -275,7 +273,7 @@ windowViewDidReset(std::shared_ptr<tygra::Window> window,
 	// TODO: attach textures and buffers here
 
 	glBindRenderbuffer(GL_RENDERBUFFER, lbuffer_colour_rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB8, width, height);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB32F, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, lbuffer_colour_rbo);
 
 	framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -353,9 +351,9 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 	//post
 
 	//switch buffer
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, lbuffer_fbo);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebuffer(0, 0, Viewport[2], Viewport[3], 0, 0, Viewport[2], Viewport[3], GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	//glBindFramebuffer(GL_READ_FRAMEBUFFER, gbuffer_fbo);
+	//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	//glBlitFramebuffer(0, 0, Viewport[2], Viewport[3], 0, 0, Viewport[2], Viewport[3], GL_COLOR_BUFFER_BIT, GL_LINEAR);
 }
 void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 {
@@ -363,16 +361,17 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 	glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fbo);
 	//clear depth stencil
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_STENCIL_TEST);
+	//glEnable(GL_STENCIL_TEST);
 	
 	glClear(GL_DEPTH_BUFFER_BIT);
 	//stencil write to 128
-	glStencilMask(128);
+	//glStencilMask(128);
+	//glStencilFunc(GL_ALWAYS, 0, 0xff);
 	//set depth less than
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LESS);
+	//glDepthMask(GL_TRUE);
+	//glDepthFunc(GL_ALWAYS);
 	//disable blend
-	glDisable(GL_BLEND);
+	//glDisable(GL_BLEND);
 	//bind texture units to 0
 	/*glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
@@ -389,8 +388,7 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 	glUseProgram(gbuffer_prog);
 	SetUniforms(gbuffer_prog, view, projection);
 	glBindVertexArray(VAO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBindBufferBase(GL_UNIFORM_BUFFER, Instance_BO_bufferpointindex, Instance_BO);
+	glBindBuffer(GL_ARRAY_BUFFER, IBO);
 	for (auto i : geometry_->getAllMeshes())
 	{
 		
@@ -401,7 +399,7 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 		for (auto j : instances)
 		{
 			
-			glBufferSubData(GL_UNIFORM_BUFFER, totaloffset, sizeof(Per_Instance), &per_instance_.find(j)->second);
+			glBufferSubData(GL_ARRAY_BUFFER, totaloffset, sizeof(Per_Instance), &per_instance_.find(j)->second);
 			totaloffset += sizeof(Per_Instance);
 		}
 		glDrawElementsInstanced(GL_TRIANGLES, mesh.element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(mesh.element_offset), instances.size());

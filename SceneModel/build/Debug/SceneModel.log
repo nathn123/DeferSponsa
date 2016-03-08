@@ -1,11 +1,11 @@
-﻿Build started 05/03/2016 13:45:53.
-     1>Project "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\SceneModel\SceneModel.vcxproj" on node 3 (Build target(s)).
+﻿Build started 08/03/2016 10:54:18.
+     1>Project "C:\Users\p4100172\Desktop\RTG\trunk\SceneModel\SceneModel.vcxproj" on node 3 (Build target(s)).
      1>Lib:
-         SceneModel.vcxproj -> C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\SceneModel\lib\Win32\v120\Debug\SceneModel.lib
+         SceneModel.vcxproj -> C:\Users\p4100172\Desktop\RTG\trunk\SceneModel\lib\Win32\v120\Debug\SceneModel.lib
        PostBuildEvent:
-         xcopy /E /S /I /Y "doc" "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\external\doc"
-         xcopy /E /S /I /Y "include" "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\external\include"
-         xcopy /E /S /I /Y "lib" "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\external\lib"
+         xcopy /E /S /I /Y "doc" "C:\Users\p4100172\Desktop\RTG\trunk\external\doc"
+         xcopy /E /S /I /Y "include" "C:\Users\p4100172\Desktop\RTG\trunk\external\include"
+         xcopy /E /S /I /Y "lib" "C:\Users\p4100172\Desktop\RTG\trunk\external\lib"
          :VCEnd
          File not found - doc
          0 File(s) copied
@@ -24,8 +24,8 @@
          lib\Win32\v120\Debug\SceneModel.lib
          lib\Win32\v120\Debug\scenemodel.pdb
          2 File(s) copied
-     1>Done Building Project "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\SceneModel\SceneModel.vcxproj" (Build target(s)).
+     1>Done Building Project "C:\Users\p4100172\Desktop\RTG\trunk\SceneModel\SceneModel.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.10
+Time Elapsed 00:00:00.17
