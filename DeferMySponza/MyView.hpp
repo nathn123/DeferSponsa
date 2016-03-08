@@ -135,6 +135,8 @@ private:
 	GLuint gbuffer_diffuse_tex;
 	GLuint gbuffer_specular_tex;
 	GLuint gbuffer_shininess_tex;
+	GLuint gbuffer_depth_tex;
+	GLuint gbuffer_depth_stencil_RB;
 	GLuint gbuffer_fbo;
 
 	std::unordered_map<SceneModel::MeshId, Mesh> mesh_;

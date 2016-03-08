@@ -1,5 +1,25 @@
-﻿Build started 28/01/2016 17:23:25.
+﻿Build started 05/03/2016 13:45:53.
+     1>Project "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\tygra\tygra.vcxproj" on node 2 (Build target(s)).
+     1>Lib:
+         tygra.vcxproj -> C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\tygra\lib\Win32\v120\Debug\tygra.lib
+       PostBuildEvent:
+         xcopy /E /S /I /Y "doc" "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\external\doc"
+         xcopy /E /S /I /Y "include" "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\external\include"
+         xcopy /E /S /I /Y "lib" "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\external\lib"
+         :VCEnd
+         0 File(s) copied
+         File not found - doc
+         include\tygra\FileHelper.hpp
+         include\tygra\Image.hpp
+         include\tygra\Window.hpp
+         include\tygra\WindowControlDelegate.hpp
+         include\tygra\WindowViewDelegate.hpp
+         5 File(s) copied
+         lib\Win32\v120\Debug\tygra.lib
+         lib\Win32\v120\Debug\tygra.pdb
+         2 File(s) copied
+     1>Done Building Project "C:\Users\nathan\Desktop\New folder (2)\DeferSponsa\tygra\tygra.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.01
+Time Elapsed 00:00:00.08

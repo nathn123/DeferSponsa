@@ -7,15 +7,15 @@ in vec3 varying_diffuse;
 in vec3 varying_specular;
 in float varying_shininess;
 
-out vec3 fragment_position;
-out vec3 fragment_normal;
-out vec3 fragment_diffuse;
-out vec3 fragment_specular;
-out float fragment_shininess;
+layout(location = 0 ) out vec3 fragment_position;
+layout(location = 1 ) out vec3 fragment_normal;
+layout(location = 2 ) out vec3 fragment_diffuse;
+layout(location = 3 ) out vec3 fragment_specular;
+layout(location = 4 ) out float fragment_shininess;
 
 void main(void)
 {
-	fragment_position = varying_position; // write position to texture
+	fragment_position = vec3(1.0,0.0,0.0) /*varying_position*/; // write position to texture
 	fragment_normal = varying_normal; // write normal to texture
 	fragment_diffuse = varying_diffuse;
     fragment_specular = varying_specular;

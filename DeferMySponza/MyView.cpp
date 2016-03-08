@@ -123,24 +123,24 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	std::vector<std::string>gvertex_attrib = { "vertex_position", "vertex_normal"};
 	std::vector<std::string>gfragment_attrib = { "fragment_position", "fragment_normal", "fragment_diffuse", "fragment_specular","fragment_shininess" };
 	gbuffer_prog = glCreateProgram();
+	CreateShader(gbuffer_prog,gbuffer_fragment_shader, "gbuffer_fs.glsl", std::vector<std::string>(), GL_FRAGMENT_SHADER, gfragment_attrib);
 	CreateShader(gbuffer_prog,gbuffer_vertex_shader, "gbuffer_vs.glsl", gvertex_attrib, GL_VERTEX_SHADER);
-	CreateShader(gbuffer_prog, gbuffer_fragment_shader, "gbuffer_fs.glsl", std::vector<std::string>(), GL_FRAGMENT_SHADER, gfragment_attrib);
 	glLinkProgram(gbuffer_prog);
 
-	//ambient shaders
-	std::vector<std::string>avertex_attrib = { "vertex_position", "vertex_normal" };
-	std::vector<std::string>afragment_attrib = { "fragment_position", "fragment_normal" };
-	ambient_prog = glCreateProgram();
-	CreateShader(ambient_prog, gbuffer_vertex_shader, "ambient_vs.glsl", avertex_attrib, GL_VERTEX_SHADER);
-	CreateShader(ambient_prog, gbuffer_fragment_shader, "ambient_fs.glsl", afragment_attrib, GL_FRAGMENT_SHADER);
-	glLinkProgram(ambient_prog);
-	//light shaders
-	std::vector<std::string>lvertex_attrib = { "vertex_position", "vertex_normal" };
-	std::vector<std::string>lfragment_attrib = { "fragment_position", "fragment_normal" };
-	light_prog = glCreateProgram();
-	CreateShader(light_prog, gbuffer_vertex_shader, "light_vs.glsl", lvertex_attrib, GL_VERTEX_SHADER);
-	CreateShader(light_prog, gbuffer_fragment_shader, "light_fs.glsl", lfragment_attrib, GL_FRAGMENT_SHADER);
-	glLinkProgram(light_prog);
+	////ambient shaders
+	//std::vector<std::string>avertex_attrib = { "vertex_position", "vertex_normal" };
+	//std::vector<std::string>afragment_attrib = { "fragment_position", "fragment_normal" };
+	//ambient_prog = glCreateProgram();
+	//CreateShader(ambient_prog, gbuffer_vertex_shader, "ambient_vs.glsl", avertex_attrib, GL_VERTEX_SHADER);
+	//CreateShader(ambient_prog, gbuffer_fragment_shader, "ambient_fs.glsl", afragment_attrib, GL_FRAGMENT_SHADER);
+	//glLinkProgram(ambient_prog);
+	////light shaders
+	//std::vector<std::string>lvertex_attrib = { "vertex_position", "vertex_normal" };
+	//std::vector<std::string>lfragment_attrib = { "fragment_position", "fragment_normal" };
+	//light_prog = glCreateProgram();
+	//CreateShader(light_prog, gbuffer_vertex_shader, "light_vs.glsl", lvertex_attrib, GL_VERTEX_SHADER);
+	//CreateShader(light_prog, gbuffer_fragment_shader, "light_fs.glsl", lfragment_attrib, GL_FRAGMENT_SHADER);
+	//glLinkProgram(light_prog);
 	geometry_ = std::make_shared<SceneModel::GeometryBuilder>();
 	unsigned int totaloffset = 0;
 	unsigned int totalelementoffset = 0;
@@ -257,7 +257,10 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_specular_tex);
 	glGenTextures(1, &gbuffer_shininess_tex);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_shininess_tex);
+	glGenTextures(1, &gbuffer_depth_tex);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_depth_tex);
 	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	glGenRenderbuffers(1, &gbuffer_depth_stencil_RB);
 }
 
 void MyView::
@@ -284,28 +287,34 @@ windowViewDidReset(std::shared_ptr<tygra::Window> window,
 	glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fbo);
 
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
-	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB8, width, height, 0, GL_RGB, GL_FLOAT, 0);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE, gbuffer_position_tex, 0);
 
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex);
-	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB8, width, height, 0, GL_RGB, GL_FLOAT, 0);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_RECTANGLE, gbuffer_normal_tex, 0);
 
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_diffuse_tex);
-	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB8, width, height, 0, GL_RGB, GL_FLOAT, 0);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_RECTANGLE, gbuffer_diffuse_tex, 0);
 
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_specular_tex);
-	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB8, width, height, 0, GL_RGB, GL_FLOAT, 0);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_RECTANGLE, gbuffer_specular_tex, 0);
 
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_shininess_tex);
-	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB8, width, height, 0, GL_RGB, GL_FLOAT, 0);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_RECTANGLE, gbuffer_shininess_tex, 0);/**/
+	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, gbuffer_depth_stencil_RB);
+	glRenderbufferStorage(GL_RENDERBUFFER,GL_DEPTH24_STENCIL8,width,height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, gbuffer_depth_stencil_RB);
+	
 
 	GLenum Buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
 	glDrawBuffers(5, Buffers);
-	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	
 
 	framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (framebuffer_status != GL_FRAMEBUFFER_COMPLETE) {
@@ -366,15 +375,15 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 	glDisable(GL_BLEND);
 	//bind texture units to 0
 	/*glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex);
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_diffuse_tex);
 	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_specular_tex);
 	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_RECTANGLE, 0);*/
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_shininess_tex);*/
 	//loop drawing
 	
 	glUseProgram(gbuffer_prog);
@@ -384,16 +393,17 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 	glBindBufferBase(GL_UNIFORM_BUFFER, Instance_BO_bufferpointindex, Instance_BO);
 	for (auto i : geometry_->getAllMeshes())
 	{
+		
 		auto mesh = mesh_.find(i.getId())->second;
 		auto instances = scene_->getInstancesByMeshId(i.getId());
-		auto totaloffset = 0;
+		
+		auto totaloffset = 0; 
 		for (auto j : instances)
 		{
-			Per_Instance* currentval = new Per_Instance(per_instance_.find(j)->second);
-			glBufferSubData(GL_UNIFORM_BUFFER, totaloffset, sizeof(Per_Instance), &currentval);
+			
+			glBufferSubData(GL_UNIFORM_BUFFER, totaloffset, sizeof(Per_Instance), &per_instance_.find(j)->second);
 			totaloffset += sizeof(Per_Instance);
 		}
-		
 		glDrawElementsInstanced(GL_TRIANGLES, mesh.element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(mesh.element_offset), instances.size());
 	}
 }
@@ -583,8 +593,8 @@ bool MyView::CreateShader(GLuint shader_program,
 	glAttachShader(shader_program, shader);
 	for (int i = 0; i < attriblocations.size(); i++)
 		glBindAttribLocation(shader_program, i, attriblocations[i].data());
-	for (int i = 0; i < attriblocations.size(); i++)
-		glBindFragDataLocation(shader_program, i, attriblocations[i].data());
+	for (int i = 0; i < fragdatalocations.size(); i++)
+		glBindFragDataLocation(shader_program, i, fragdatalocations[i].data());
 
 	glDeleteShader(shader);
 	return true;
