@@ -85,12 +85,14 @@ private:
 		glm::vec3 specular;
 		float shininess;
 		glm::vec3 diffuse;
+		float padding;
 
 		Per_Instance() :
 			Model_xform(0),
 			specular(0),
 			diffuse(0),
-			shininess(0){}
+			shininess(0),
+			padding(0){}
 	};
 	void
 		gbufferPass(glm::mat4 view, glm::mat4 projection);

@@ -219,20 +219,19 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
-
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), TGL_BUFFER_OFFSET(mesh_.begin()->second.normal_offset));
 
-	glBindBuffer(GL_ARRAY_BUFFER, IBO);
 
+	glBindBuffer(GL_ARRAY_BUFFER, IBO);
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), TGL_BUFFER_OFFSET(sizeof(glm::mat4) + sizeof(glm::vec3) + sizeof(float)));
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), TGL_BUFFER_OFFSET(sizeof(glm::vec4)*4 + sizeof(glm::vec3) + sizeof(float)));
 	glVertexAttribDivisor(2, 1);
 	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), TGL_BUFFER_OFFSET(sizeof(glm::mat4)));
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), TGL_BUFFER_OFFSET(sizeof(glm::vec4) * 4));
 	glVertexAttribDivisor(3, 1);
 	glEnableVertexAttribArray(4);
-	glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), TGL_BUFFER_OFFSET(sizeof(glm::mat4)+ sizeof(glm::vec3)));
+	glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(Per_Instance), TGL_BUFFER_OFFSET(sizeof(glm::vec4) * 4 + sizeof(glm::vec3)));
 	glVertexAttribDivisor(4, 1);
 
 	for (int i = 0; i < 4; ++i)
@@ -338,7 +337,7 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 	GLint Viewport[4];
 	glGetIntegerv(GL_VIEWPORT, Viewport);
 	auto aspect = Viewport[2] / (float)Viewport[3];
-	auto view = glm::lookAt(camera.getPosition(), camera.getPosition() + camera.getDirection(), scene_->getUpDirection());
+	auto view = glm::lookAt(camera.getPosition(), camera.getDirection(), scene_->getUpDirection());
 	auto projection = glm::perspective(camera.getVerticalFieldOfViewInDegrees(), aspect, camera.getNearPlaneDistance(), camera.getFarPlaneDistance());
 
 	//UpdateLights(false);
@@ -365,24 +364,13 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 	
 	glClear(GL_DEPTH_BUFFER_BIT);
 	//stencil write to 128
-	//glStencilMask(128);
+	glStencilMask(128);
 	//glStencilFunc(GL_ALWAYS, 0, 0xff);
 	//set depth less than
-	//glDepthMask(GL_TRUE);
-	//glDepthFunc(GL_ALWAYS);
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LEQUAL);
 	//disable blend
-	//glDisable(GL_BLEND);
-	//bind texture units to 0
-	/*glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_diffuse_tex);
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_specular_tex);
-	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_shininess_tex);*/
+	glDisable(GL_BLEND);
 	//loop drawing
 	
 	glUseProgram(gbuffer_prog);
