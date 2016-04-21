@@ -11,12 +11,13 @@ uniform mat4 view_xform;
 
 uniform Lights
 {
+	mat4 Modelxform;
 	vec3 Position;
-	vec3 Intensity;
-	vec3 Direction;
 	float Range;
-	float Coneangledegrees;
-	bool Shadows;
+	vec3 Intensity;
+	float Coneangledegrees; 
+	vec3 Direction;
+	int Shadows;
 };
 
 out vec4 fragment_colour;

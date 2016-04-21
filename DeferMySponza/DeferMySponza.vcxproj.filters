@@ -16,6 +16,12 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{bb506adb-455d-4763-8db3-c16785e5136d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SMAA">
+      <UniqueIdentifier>{8c400b89-0f83-4b59-9934-df0372183bfc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\SMAA">
+      <UniqueIdentifier>{fc5db536-a44b-4076-8426-0e5cb6625e46}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MyController.cpp">
@@ -34,6 +40,18 @@
     </ClInclude>
     <ClInclude Include="MyView.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Textures\AreaTex.h">
+      <Filter>SMAA</Filter>
+    </ClInclude>
+    <ClInclude Include="Textures\SearchTex.h">
+      <Filter>SMAA</Filter>
+    </ClInclude>
+    <ClInclude Include="SMAA.h">
+      <Filter>SMAA</Filter>
+    </ClInclude>
+    <ClInclude Include="smaa_glsl.h">
+      <Filter>SMAA</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -54,6 +72,24 @@
     </None>
     <None Include="..\demo\light_vs.glsl">
       <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\demo\SMAA_Blend_fs.glsl">
+      <Filter>Shaders\SMAA</Filter>
+    </None>
+    <None Include="..\demo\SMAA_Blend_vs.glsl">
+      <Filter>Shaders\SMAA</Filter>
+    </None>
+    <None Include="..\demo\SMAA_Edge_fs.glsl">
+      <Filter>Shaders\SMAA</Filter>
+    </None>
+    <None Include="..\demo\SMAA_Edge_vs.glsl">
+      <Filter>Shaders\SMAA</Filter>
+    </None>
+    <None Include="..\demo\SMAA_Neighbour_fs.glsl">
+      <Filter>Shaders\SMAA</Filter>
+    </None>
+    <None Include="..\demo\SMAA_Neighbour_vs.glsl">
+      <Filter>Shaders\SMAA</Filter>
     </None>
   </ItemGroup>
 </Project>

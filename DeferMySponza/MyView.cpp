@@ -6,7 +6,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <cassert>
-
+#include "Textures\AreaTex.h"
+#include "Textures\SearchTex.h"
 MyView::
 MyView()
 {
@@ -121,25 +122,34 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	//gbuffer shaders
 	std::vector<std::string>gvertex_attrib = { "vertex_position", "vertex_normal", "diffuse", "specular", "shininess", "model_xform" };
 	std::vector<std::string>gfragment_attrib = { "fragment_position", "fragment_normal", "fragment_diffuse", "fragment_specular","fragment_shininess" };
-	gbuffer_prog = glCreateProgram();
-	CreateShader(gbuffer_prog,gbuffer_fragment_shader, "gbuffer_fs.glsl", std::vector<std::string>(), GL_FRAGMENT_SHADER, gfragment_attrib);
-	CreateShader(gbuffer_prog,gbuffer_vertex_shader, "gbuffer_vs.glsl", gvertex_attrib, GL_VERTEX_SHADER);
-	glLinkProgram(gbuffer_prog);
+	CreateShader(gbuffer_prog, "gbuffer", gvertex_attrib, gfragment_attrib);
 
-	////ambient shaders
-	//std::vector<std::string>avertex_attrib = { "vertex_position", "vertex_normal" };
-	//std::vector<std::string>afragment_attrib = { "fragment_position", "fragment_normal" };
-	//ambient_prog = glCreateProgram();
-	//CreateShader(ambient_prog, gbuffer_vertex_shader, "ambient_vs.glsl", avertex_attrib, GL_VERTEX_SHADER);
-	//CreateShader(ambient_prog, gbuffer_fragment_shader, "ambient_fs.glsl", afragment_attrib, GL_FRAGMENT_SHADER);
-	//glLinkProgram(ambient_prog);
-	////light shaders
-	//std::vector<std::string>lvertex_attrib = { "vertex_position", "vertex_normal" };
-	//std::vector<std::string>lfragment_attrib = { "fragment_position", "fragment_normal" };
-	//light_prog = glCreateProgram();
-	//CreateShader(light_prog, gbuffer_vertex_shader, "light_vs.glsl", lvertex_attrib, GL_VERTEX_SHADER);
-	//CreateShader(light_prog, gbuffer_fragment_shader, "light_fs.glsl", lfragment_attrib, GL_FRAGMENT_SHADER);
-	//glLinkProgram(light_prog);
+	//ambient shaders
+	std::vector<std::string>avertex_attrib = { "vertex_position"};
+	std::vector<std::string>afragment_attrib = { "finalcolour"};
+	CreateShader(ambient_prog,  "ambient", avertex_attrib, afragment_attrib);
+	//light shaders
+	std::vector<std::string>lvertex_attrib = { "vertex_position"};
+	std::vector<std::string>lfragment_attrib = { "fragment_colour"};
+	CreateShader(light_prog, "light", lvertex_attrib, lfragment_attrib);
+
+	//CreateShader(SMAA_Blendprog, "SMAA_Blend", std::vector<std::string>(), std::vector<std::string>());
+	//glUseProgram(SMAA_Blendprog);
+	//glUniform1i(glGetUniformLocation(SMAA_Blendprog, "edge_tex"), 0);
+	//glUniform1i(glGetUniformLocation(SMAA_Blendprog, "area_tex"), 1);
+	//glUniform1i(glGetUniformLocation(SMAA_Blendprog, "search_tex"), 2);
+
+	//CreateShader(SMAA_Edgeprog, "SMAA_Edge", std::vector<std::string>(), std::vector<std::string>());
+	//glUseProgram(SMAA_Edgeprog);
+	//glUniform1i(glGetUniformLocation(SMAA_Edgeprog, "Input_tex"), 0);
+
+	//CreateShader(SMAA_Neighbourprog, "SMAA_Neighbour", std::vector<std::string>(), std::vector<std::string>());
+	//glUseProgram(SMAA_Neighbourprog);
+	//glUniform1i(glGetUniformLocation(SMAA_Neighbourprog, "Input_tex"), 0);
+	//glUniform1i(glGetUniformLocation(SMAA_Neighbourprog, "blend_tex"), 1);
+	//glUseProgram(0);
+
+
 	geometry_ = std::make_shared<SceneModel::GeometryBuilder>();
 	unsigned int totaloffset = 0;
 	unsigned int totalelementoffset = 0;
@@ -173,7 +183,6 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 
 	// create empty buffer
 
-	//UpdateLights(true);
 
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -211,9 +220,6 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	glBindBuffer(GL_ARRAY_BUFFER, IBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	//set up attribute locations
-	GLuint position_location = glGetAttribLocation(gbuffer_prog, "vertex_position");
-	GLuint normal_location = glGetAttribLocation(gbuffer_prog, "vertex_normal");
-
 	
 	//Enable attrib array
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -241,6 +247,21 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 		glVertexAttribDivisor(5 + i, 1);
 	}
 
+	// create Light array buffer
+	int maxinstance = 0;
+	if (scene_->getAllDirectionalLights().size() > maxinstance)
+		maxinstance = scene_->getAllDirectionalLights().size();
+	if (scene_->getAllPointLights().size() > maxinstance)
+		maxinstance = scene_->getAllPointLights().size();
+	if (scene_->getAllSpotLights().size() > maxinstance)
+		maxinstance = scene_->getAllSpotLights().size();
+	glGenBuffers(1, &Light_BO);
+	glBindBuffer(GL_UNIFORM_BUFFER, Light_BO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights)*maxinstance, nullptr, GL_STREAM_DRAW);
+
+	glBindBufferBase(GL_UNIFORM_BUFFER, glGetUniformBlockIndex(light_prog, "Lights"), Light_BO);
+
+
 	glGenFramebuffers(1, &lbuffer_fbo);
 	glGenFramebuffers(1, &gbuffer_fbo);
 	glGenRenderbuffers(1, &lbuffer_colour_rbo);
@@ -258,6 +279,33 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_depth_tex);
 	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 	glGenRenderbuffers(1, &gbuffer_depth_stencil_RB);
+
+	//SMAA Textures
+	glGenTextures(1, &SMAA_areaTex);
+	glGenTextures(1, &SMAA_seachTex);
+	glGenTextures(1, &SMAA_InputTex);
+	glGenTextures(1, &SMAA_edgeTex);
+	glGenTextures(1, &SMAA_blendTex);
+
+	//SMAA LOADING PRECOMPILED TEXTURES
+	glBindTexture(GL_TEXTURE_RECTANGLE, SMAA_areaTex);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA8,AREATEX_WIDTH,AREATEX_HEIGHT,0,GL_RGB,GL_UNSIGNED_BYTE,areaTexBytes);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	
+	glBindTexture(GL_TEXTURE_RECTANGLE, SMAA_seachTex);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA8,SEARCHTEX_WIDTH,SEARCHTEX_HEIGHT,0,GL_RGB,GL_UNSIGNED_BYTE,searchTexBytes);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	//SMAA FRAMEBUFFERS
+	glGenFramebuffers(1, &SMAA_edge_fbo);
+	glGenFramebuffers(1, &SMAA_blend_fbo);
+
 }
 
 void MyView::
@@ -311,12 +359,55 @@ windowViewDidReset(std::shared_ptr<tygra::Window> window,
 
 	GLenum Buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
 	glDrawBuffers(5, Buffers);
-	
 
 	framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (framebuffer_status != GL_FRAMEBUFFER_COMPLETE) {
 		tglDebugMessage(GL_DEBUG_SEVERITY_HIGH_ARB, "framebuffer not complete");
 	}
+
+	//SMAA Render Targets
+	//glBindFramebuffer(GL_FRAMEBUFFER, SMAA_Fbuffer);
+
+	glBindTexture(GL_TEXTURE_RECTANGLE, SMAA_edgeTex);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE, SMAA_edgeTex, 0);
+
+	glBindTexture(GL_TEXTURE_RECTANGLE, SMAA_blendTex);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0); 
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_RECTANGLE, SMAA_blendTex, 0);
+
+	glBindTexture(GL_TEXTURE_RECTANGLE, SMAA_InputTex);
+	glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_RECTANGLE, SMAA_InputTex, 0);
+
+	//glBindTexture(GL_TEXTURE_RECTANGLE, SMAA_areaTex);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_RECTANGLE, SMAA_areaTex, 0);
+
+	//glBindTexture(GL_TEXTURE_RECTANGLE, SMAA_seachTex);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_RECTANGLE, SMAA_seachTex, 0);
+
+	//GLenum SMAABuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	//glDrawBuffers(3, SMAABuffers);
+
+
+	framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (framebuffer_status != GL_FRAMEBUFFER_COMPLETE) {
+		tglDebugMessage(GL_DEBUG_SEVERITY_HIGH_ARB, "framebuffer not complete");
+	}
+
+
 	
 
 }
@@ -340,19 +431,21 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 	auto view = glm::lookAt(camera.getPosition(), camera.getDirection(), scene_->getUpDirection());
 	auto projection = glm::perspective(camera.getVerticalFieldOfViewInDegrees(), aspect, camera.getNearPlaneDistance(), camera.getFarPlaneDistance());
 
-	//UpdateLights(false);
+	UpdateLights();
 	// draw to GBuffer
 	gbufferPass(view,projection);
 	//ambient directional lights pass back buffer
-	//ambientPass(view, projection);
+	ambientPass(view, projection);
 	//light pass back buffer
-	//LightPass(view, projection);
+	LightPass(view, projection);
 	//post
+	ShadowPass();
+	//AAPass();
 
 	//switch buffer
-	//glBindFramebuffer(GL_READ_FRAMEBUFFER, gbuffer_fbo);
-	//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	//glBlitFramebuffer(0, 0, Viewport[2], Viewport[3], 0, 0, Viewport[2], Viewport[3], GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, lbuffer_fbo);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBlitFramebuffer(0, 0, Viewport[2], Viewport[3], 0, 0, Viewport[2], Viewport[3], GL_COLOR_BUFFER_BIT, GL_LINEAR);
 }
 void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 {
@@ -360,7 +453,8 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 	glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fbo);
 	//clear depth stencil
 	glEnable(GL_DEPTH_TEST);
-	//glEnable(GL_STENCIL_TEST);
+	glEnable(GL_STENCIL_TEST);
+
 	
 	glClear(GL_DEPTH_BUFFER_BIT);
 	//stencil write to 128
@@ -372,6 +466,16 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 	//disable blend
 	glDisable(GL_BLEND);
 	//loop drawing
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 	
 	glUseProgram(gbuffer_prog);
 	SetUniforms(gbuffer_prog, view, projection);
@@ -379,18 +483,15 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 	glBindBuffer(GL_ARRAY_BUFFER, IBO);
 	for (auto i : geometry_->getAllMeshes())
 	{
-		
 		auto mesh = mesh_.find(i.getId())->second;
 		auto instances = scene_->getInstancesByMeshId(i.getId());
-		
 		auto totaloffset = 0; 
 		for (auto j : instances)
 		{
-			
 			glBufferSubData(GL_ARRAY_BUFFER, totaloffset, sizeof(Per_Instance), &per_instance_.find(j)->second);
 			totaloffset += sizeof(Per_Instance);
 		}
-		glDrawElementsInstanced(GL_TRIANGLES, mesh.element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(mesh.element_offset), instances.size());
+		glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh.element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(mesh.element_offset), instances.size(), (mesh.position_offset / sizeof(glm::vec3)));
 	}
 }
 
@@ -414,16 +515,9 @@ void MyView::ambientPass(glm::mat4 view, glm::mat4 projection)
 	glUniform3fv(ambientlight,1,glm::value_ptr(scene_->getAmbientLightIntensity()));
 	SetUniforms(ambient_prog, view, projection);
 
-	
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex);
-
-	glBindVertexArray(light_quad_mesh_.vao);
 	// draw quad
-	glDrawArrays(GL_TRIANGLE_FAN, 0, 4); // draw quad
+	glBindVertexArray(light_quad_mesh_.vao);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4); 
 
 }
 void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
@@ -440,54 +534,66 @@ void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 	glBlendEquation(GL_FUNC_ADD);
 	glBlendFunc(GL_ONE, GL_ONE);
 	//bind gbuffer textures to tex units
+
 	glUseProgram(light_prog);
 	GLint sampposloc = glGetUniformLocation(light_prog, "sampler_world_position");
 	GLint sampnorloc = glGetUniformLocation(light_prog, "sampler_world_normal");
 	GLint sampdifloc = glGetUniformLocation(light_prog, "sampler_world_diffuse");
 	GLint sampspeloc = glGetUniformLocation(light_prog, "sampler_world_specular");
 	GLint sampshiloc = glGetUniformLocation(light_prog, "sampler_world_shininess");
-	glUniform1ui(sampposloc, 1);
-	glUniform1ui(sampnorloc, 1);
-	glUniform1ui(sampdifloc, 1);
-	glUniform1ui(sampspeloc, 1);
-	glUniform1ui(sampshiloc, 1);
-	SetUniforms(gbuffer_prog, view, projection);
+
+	SetUniforms(light_prog, view, projection);
+	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
+	glUniform1i(sampposloc, 0);
+
+	
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex);
+	glUniform1i(sampnorloc, 1);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_diffuse_tex);
+	glUniform1i(sampdifloc, 2);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_specular_tex);
+	glUniform1i(sampspeloc, 3);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_shininess_tex);
+	glUniform1i(sampshiloc, 4);
+	
 	//loop through light models
 	// load all dir lights
-	int offset = 0;
-	for (auto i : scene_->getAllDirectionalLights())
-	{
-		glBindBuffer(GL_UNIFORM_BUFFER, Light_UBO);
-		glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(Lights), &lights_[i.getId()]);
-		offset += sizeof(Lights);
-	}
-	glBindVertexArray(light_quad_mesh_.vao);
+	//int offset = 0;
+	//for (auto i : scene_->getAllDirectionalLights())
+	//{
+	//	glBindBuffer(GL_UNIFORM_BUFFER, Light_BO);
+	//	glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights), &lights_[i.getId()], GL_STREAM_DRAW);
+	//	glBindVertexArray(light_quad_mesh_.vao);
+	//	glDrawElements(GL_TRIANGLES, light_quad_mesh_.element_count, GL_UNSIGNED_INT, 0);
+	//}
+	/*glBindVertexArray(light_quad_mesh_.vao);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_quad_mesh_.element_vbo);
-	glDrawElementsInstanced(GL_TRIANGLES, light_quad_mesh_.element_count, GL_UNSIGNED_INT, 0, scene_->getAllDirectionalLights().size());
-	offset = 0;
+	glDrawElementsInstanced(GL_TRIANGLES, light_quad_mesh_.element_count, GL_UNSIGNED_INT, 0, scene_->getAllDirectionalLights().size());*/
 	for (auto i : scene_->getAllPointLights())
 	{
-		glBindBuffer(GL_UNIFORM_BUFFER, Light_UBO);
-		glBufferSubData(GL_UNIFORM_BUFFER,offset,sizeof(Lights), &lights_[i.getId()]);
-		offset += sizeof(Lights);
+		glBindBuffer(GL_UNIFORM_BUFFER, Light_BO);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights), &lights_[i.getId()], GL_STREAM_DRAW);
+		glBindVertexArray(light_sphere_mesh_.vao);
+		glDrawElements(GL_TRIANGLES, light_sphere_mesh_.element_count, GL_UNSIGNED_INT, 0);
 	}
-	glBindVertexArray(light_sphere_mesh_.vao);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_sphere_mesh_.element_vbo);
-	glDrawElementsInstanced(GL_TRIANGLES,light_sphere_mesh_.element_count,GL_UNSIGNED_INT,0,scene_->getAllPointLights().size());
-	offset = 0;
+
+	/*offset = 0;*/
 	for (auto i : scene_->getAllSpotLights())
 	{
-		glBindBuffer(GL_UNIFORM_BUFFER, Light_UBO);
-		glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(Lights), &lights_[i.getId()]);
-		offset += sizeof(Lights);
+		glBindBuffer(GL_UNIFORM_BUFFER, Light_BO);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights), &lights_[i.getId()], GL_STREAM_DRAW);
+		glBindVertexArray(light_cone_mesh_.vao);
+		glDrawElements(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0);
 	}
-	glBindVertexArray(light_cone_mesh_.vao);
+	/*glBindVertexArray(light_cone_mesh_.vao);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_cone_mesh_.element_vbo);
-	glDrawElementsInstanced(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0, scene_->getAllSpotLights().size());
+	glDrawElementsInstanced(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0, scene_->getAllSpotLights().size());*/
 	
 	
 	//auto totaloffset = 0;
@@ -495,6 +601,20 @@ void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 	//	glBufferSubData(GL_UNIFORM_BUFFER, totaloffset, sizeof(Per_Instance), &per_instance_.find(j)->second);
 	//	totaloffset += sizeof(Per_Instance);
 	//glDrawElementsInstanced(GL_TRIANGLES, element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(element_offset), instances.size());
+
+}
+void MyView::AAPass()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, SMAA_Fbuffer);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glUseProgram(SMAA_prog);
+	AAEdgePass();
+	AABlendPass();
+	AANeighbourPass();
+
+}
+void MyView::ShadowPass()
+{
 
 }
 void MyView::SetUniforms(GLuint shader, glm::mat4 view_xform, glm::mat4 projection_xform)
@@ -507,81 +627,169 @@ void MyView::SetUniforms(GLuint shader, glm::mat4 view_xform, glm::mat4 projecti
 	glUniformMatrix4fv(view_xform_id, 1, GL_FALSE, glm::value_ptr(view_xform));
 	glUniformMatrix4fv(projection_xform_id, 1, GL_FALSE, glm::value_ptr(projection_xform));
 }
-void MyView::UpdateLights(bool firstrun)
+void MyView::UpdateLights()
 {
 	// store all light data
+	
 	for (auto i : scene_->getAllDirectionalLights())
 	{
+		glm::mat4 Matrix = glm::mat4(1);
 		Lights newlight;
-		newlight.direction = i.getDirection();
+		newlight.Modelxform = Matrix;
 		newlight.intensity = i.getIntensity();
+		newlight.direction = i.getDirection();
 		
 		lights_.insert(std::make_pair(i.getId(), newlight));
 	}
-	for (auto i : scene_->getAllPointLights())
+	for (auto j : scene_->getAllPointLights())
 	{
+		glm::mat4 Matrix = glm::mat4(1);
+		Matrix = glm::translate(Matrix, j.getPosition());
+		Matrix = glm::scale(Matrix, glm::vec3(j.getRange()));
 		Lights newlight;
-		newlight.position = i.getPosition();
-		newlight.intensity = i.getIntensity();
-		newlight.range = i.getRange();
-		lights_.insert(std::make_pair(i.getId(), newlight));
+		newlight.Modelxform = Matrix;
+		newlight.position = j.getPosition();
+		newlight.intensity = j.getIntensity();
+		newlight.range = j.getRange();
+		lights_.insert(std::make_pair(j.getId(), newlight));
 	}
 	for (auto i : scene_->getAllSpotLights())
 	{
+		glm::mat4 Matrix = glm::mat4(1);
+		Matrix = glm::translate(Matrix, i.getPosition());
+		Matrix = glm::scale(Matrix, glm::vec3(i.getRange()));
+		Matrix = glm::lookAt(i.getPosition(), i.getDirection(), scene_->getUpDirection());
 		Lights newlight;
-		newlight.position = i.getPosition();
+		newlight.Modelxform = Matrix;
 		newlight.intensity = i.getIntensity();
 		newlight.range = i.getRange();
 		newlight.shadows = i.getCastShadow();
+		newlight.position = i.getPosition();
 		newlight.coneangledegrees = i.getConeAngleDegrees();
 		newlight.direction = i.getDirection();
 		lights_.insert(std::make_pair(i.getId(), newlight));
 	}
-	if (firstrun)
-	{
-		int maxinstance = 0;
-		if (scene_->getAllDirectionalLights().size() > maxinstance)
-			maxinstance = scene_->getAllDirectionalLights().size();
-		if (scene_->getAllPointLights().size() > maxinstance)
-			maxinstance = scene_->getAllPointLights().size();
-		if (scene_->getAllSpotLights().size() > maxinstance)
-			maxinstance = scene_->getAllSpotLights().size();
-
-		glGenBuffers(1, &Light_UBO);
-		glBindBuffer(GL_UNIFORM_BUFFER, Light_UBO);
-		glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights)*maxinstance, nullptr, GL_STREAM_DRAW);
-	}
 }
-bool MyView::CreateShader(GLuint shader_program,
-	GLuint shader,
+
+bool MyView::CreateShader(GLuint& shader_program,
 	std::string shader_name,
 	std::vector<std::string> attriblocations,
-	GLenum shadertype,
 	std::vector<std::string> fragdatalocations)
 {
 	GLint compile_status = 0;
-
-	shader = glCreateShader(shadertype); // create shader
-	std::string vertex_shader_string = tygra::stringFromFile(shader_name); // load shader file
+	shader_program = glCreateProgram();
+	GLuint vshader;
+	vshader = glCreateShader(GL_VERTEX_SHADER); // create shader
+	std::string vertex_shader_string = tygra::stringFromFile(shader_name+"_vs.glsl"); // load shader file
 	const char *vertex_shader_code = vertex_shader_string.c_str();
-	glShaderSource(shader, 1, (const GLchar **)&vertex_shader_code, NULL);
-	glCompileShader(shader);
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_status);
+	glShaderSource(vshader, 1, (const GLchar **)&vertex_shader_code, NULL);
+	glCompileShader(vshader);
+	glGetShaderiv(vshader, GL_COMPILE_STATUS, &compile_status);
 	if (compile_status != GL_TRUE) {
 		const int string_length = 1024;
 		GLchar log[string_length] = "compile failed";
-		glGetShaderInfoLog(shader, string_length, NULL, log);
+		glGetShaderInfoLog(vshader, string_length, NULL, log);
+		std::cerr << log << std::endl;
+		return false;
+	}
+
+	compile_status = 0;
+	GLuint fshader;
+	fshader = glCreateShader(GL_FRAGMENT_SHADER); // create shader
+	std::string frag_shader_string = tygra::stringFromFile(shader_name+"_fs.glsl"); // load shader file
+	const char *frag_shader_code = frag_shader_string.c_str();
+	glShaderSource(fshader, 1, (const GLchar **)&frag_shader_code, NULL);
+	glCompileShader(fshader);
+	glGetShaderiv(fshader, GL_COMPILE_STATUS, &compile_status);
+	if (compile_status != GL_TRUE) {
+		const int string_length = 1024;
+		GLchar log[string_length] = "compile failed";
+		glGetShaderInfoLog(fshader, string_length, NULL, log);
 		std::cerr << log << std::endl;
 		return false;
 	}
 
 	// attach shaders to the program
-	glAttachShader(shader_program, shader);
+	glAttachShader(shader_program, vshader);
 	for (int i = 0; i < attriblocations.size(); i++)
 		glBindAttribLocation(shader_program, i, attriblocations[i].data());
+	glAttachShader(shader_program, fshader);
 	for (int i = 0; i < fragdatalocations.size(); i++)
 		glBindFragDataLocation(shader_program, i, fragdatalocations[i].data());
 
-	glDeleteShader(shader);
+	glDeleteShader(vshader);
+	glDeleteShader(fshader);
+	glLinkProgram(shader_program);
+	compile_status = 0;
+	glGetProgramiv(shader_program, GL_LINK_STATUS, &compile_status);
+	if (compile_status != GL_TRUE)
+	{
+		const int string_length = 1024;
+		GLchar log[string_length] = "compile failed";
+		glGetProgramInfoLog(shader_program, string_length, NULL, log);
+		std::cerr << log << std::endl;
+		return false;
+	}
 	return true;
+}
+
+void MyView::AAEdgePass()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, SMAA_edge_fbo);
+
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glUseProgram(SMAA_Edgeprog);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_RECTANGLE, SMAA_InputTex);
+
+	// draw quad
+	glBindVertexArray(light_quad_mesh_.vao);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+}
+void MyView::AABlendPass()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, SMAA_blend_fbo);
+	
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glUseProgram(SMAA_Blendprog);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_RECTANGLE, SMAA_edgeTex);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_RECTANGLE, SMAA_areaTex);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_RECTANGLE, SMAA_seachTex);
+
+	// draw quad
+	glBindVertexArray(light_quad_mesh_.vao);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+}
+void MyView::AANeighbourPass()
+{
+	glUseProgram(SMAA_Neighbourprog);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_RECTANGLE, SMAA_InputTex);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_RECTANGLE, SMAA_blendTex);
+
+	glEnable(GL_FRAMEBUFFER_SRGB);
+
+	// draw quad
+	glBindVertexArray(light_quad_mesh_.vao);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+	glDisable(GL_FRAMEBUFFER_SRGB);
+
 }

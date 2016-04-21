@@ -316,6 +316,10 @@
   <ItemGroup>
     <ClInclude Include="MyController.hpp" />
     <ClInclude Include="MyView.hpp" />
+    <ClInclude Include="SMAA.h" />
+    <ClInclude Include="smaa_glsl.h" />
+    <ClInclude Include="Textures\AreaTex.h" />
+    <ClInclude Include="Textures\SearchTex.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\demo\ambient_fs.glsl" />
@@ -324,6 +328,12 @@
     <None Include="..\demo\gbuffer_vs.glsl" />
     <None Include="..\demo\light_fs.glsl" />
     <None Include="..\demo\light_vs.glsl" />
+    <None Include="..\demo\SMAA_Blend_fs.glsl" />
+    <None Include="..\demo\SMAA_Blend_vs.glsl" />
+    <None Include="..\demo\SMAA_Edge_fs.glsl" />
+    <None Include="..\demo\SMAA_Edge_vs.glsl" />
+    <None Include="..\demo\SMAA_Neighbour_fs.glsl" />
+    <None Include="..\demo\SMAA_Neighbour_vs.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
