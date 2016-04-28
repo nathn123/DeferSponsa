@@ -1,35 +1,14 @@
-﻿Build started 17/03/2016 14:07:47.
-     1>Project "C:\Users\nathan\Desktop\RTG\SceneModel\SceneModel.vcxproj" on node 3 (Rebuild target(s)).
-     1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Iinclude /IC:\Users\nathan\Desktop\RTG\external/include /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _LIB /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MTd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"build\Debug\\" /Fd"lib\Win32\v120\Debug\SceneModel.pdb" /Gd /TP /analyze- /errorReport:prompt src\Camera.cpp src\Context.cpp src\DirectionalLight.cpp src\GeometryBuilder.cpp src\Instance.cpp src\Material.cpp src\Mesh.cpp src\PointLight.cpp src\SpotLight.cpp
-         Camera.cpp
-         Context.cpp
-         DirectionalLight.cpp
-         GeometryBuilder.cpp
-         Instance.cpp
-         Material.cpp
-         Mesh.cpp
-         PointLight.cpp
-         SpotLight.cpp
-         Generating Code...
-       Lib:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\Lib.exe /OUT:"lib\Win32\v120\Debug\SceneModel.lib" /NOLOGO build\Debug\Camera.obj
-         build\Debug\Context.obj
-         build\Debug\DirectionalLight.obj
-         build\Debug\GeometryBuilder.obj
-         build\Debug\Instance.obj
-         build\Debug\Material.obj
-         build\Debug\Mesh.obj
-         build\Debug\PointLight.obj
-         build\Debug\SpotLight.obj
-         SceneModel.vcxproj -> C:\Users\nathan\Desktop\RTG\SceneModel\lib\Win32\v120\Debug\SceneModel.lib
+﻿Build started 28/04/2016 15:48:20.
+     1>Project "C:\Users\m2087350\Desktop\RTG\trunk\SceneModel\SceneModel.vcxproj" on node 3 (Build target(s)).
+     1>Lib:
+         SceneModel.vcxproj -> C:\Users\m2087350\Desktop\RTG\trunk\SceneModel\lib\Win32\v120\Debug\SceneModel.lib
        PostBuildEvent:
-         xcopy /E /S /I /Y "doc" "C:\Users\nathan\Desktop\RTG\external\doc"
-         xcopy /E /S /I /Y "include" "C:\Users\nathan\Desktop\RTG\external\include"
-         xcopy /E /S /I /Y "lib" "C:\Users\nathan\Desktop\RTG\external\lib"
+         xcopy /E /S /I /Y "doc" "C:\Users\m2087350\Desktop\RTG\trunk\external\doc"
+         xcopy /E /S /I /Y "include" "C:\Users\m2087350\Desktop\RTG\trunk\external\include"
+         xcopy /E /S /I /Y "lib" "C:\Users\m2087350\Desktop\RTG\trunk\external\lib"
          :VCEnd
-         File not found - doc
          0 File(s) copied
+         File not found - doc
          include\SceneModel\Camera.hpp
          include\SceneModel\Context.hpp
          include\SceneModel\DirectionalLight.hpp
@@ -45,8 +24,8 @@
          lib\Win32\v120\Debug\SceneModel.lib
          lib\Win32\v120\Debug\scenemodel.pdb
          2 File(s) copied
-     1>Done Building Project "C:\Users\nathan\Desktop\RTG\SceneModel\SceneModel.vcxproj" (Rebuild target(s)).
+     1>Done Building Project "C:\Users\m2087350\Desktop\RTG\trunk\SceneModel\SceneModel.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:03.65
+Time Elapsed 00:00:00.18

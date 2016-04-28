@@ -578,29 +578,32 @@ void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 	for (auto i : scene_->getAllPointLights())
 	{
 		glBindBuffer(GL_UNIFORM_BUFFER, Light_BO);
-		glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights), &lights_[i.getId()], GL_STREAM_DRAW);
+		auto test = lights_[i.getId()];
+		glm::mat4 Matrix = glm::mat4(1);
+		Matrix = glm::translate(Matrix, i.getPosition());
+		Matrix = glm::scale(Matrix, glm::vec3(i.getRange()));
+		Lights newlight;
+		newlight.Modelxform = Matrix;
+		newlight.position = i.getPosition();
+		newlight.intensity = i.getIntensity();
+		newlight.range = i.getRange();
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights), &newlight, GL_STREAM_DRAW);
 		glBindVertexArray(light_sphere_mesh_.vao);
 		glDrawElements(GL_TRIANGLES, light_sphere_mesh_.element_count, GL_UNSIGNED_INT, 0);
 	}
 
-	/*offset = 0;*/
-	for (auto i : scene_->getAllSpotLights())
-	{
-		glBindBuffer(GL_UNIFORM_BUFFER, Light_BO);
-		glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights), &lights_[i.getId()], GL_STREAM_DRAW);
-		glBindVertexArray(light_cone_mesh_.vao);
-		glDrawElements(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0);
-	}
+	///*offset = 0;*/
+	//for (auto i : scene_->getAllSpotLights())
+	//{
+	//	glBindBuffer(GL_UNIFORM_BUFFER, Light_BO);
+	//	glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights), &lights_[i.getId()], GL_STREAM_DRAW);
+	//	glBindVertexArray(light_cone_mesh_.vao);
+	//	glDrawElements(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0);
+	//}
 	/*glBindVertexArray(light_cone_mesh_.vao);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_cone_mesh_.element_vbo);
 	glDrawElementsInstanced(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0, scene_->getAllSpotLights().size());*/
 	
-	
-	//auto totaloffset = 0;
-	//	glBindBuffer(GL_UNIFORM_BUFFER, Instance_BO);
-	//	glBufferSubData(GL_UNIFORM_BUFFER, totaloffset, sizeof(Per_Instance), &per_instance_.find(j)->second);
-	//	totaloffset += sizeof(Per_Instance);
-	//glDrawElementsInstanced(GL_TRIANGLES, element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(element_offset), instances.size());
 
 }
 void MyView::AAPass()
@@ -631,15 +634,15 @@ void MyView::UpdateLights()
 {
 	// store all light data
 	
-	for (auto i : scene_->getAllDirectionalLights())
+	for (auto t : scene_->getAllDirectionalLights())
 	{
 		glm::mat4 Matrix = glm::mat4(1);
 		Lights newlight;
 		newlight.Modelxform = Matrix;
-		newlight.intensity = i.getIntensity();
-		newlight.direction = i.getDirection();
+		newlight.intensity = t.getIntensity();
+		newlight.direction = t.getDirection();
 		
-		lights_.insert(std::make_pair(i.getId(), newlight));
+		lights_.insert(std::make_pair(t.getId(), newlight));
 	}
 	for (auto j : scene_->getAllPointLights())
 	{
