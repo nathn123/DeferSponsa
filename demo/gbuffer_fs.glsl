@@ -16,7 +16,7 @@ layout(location = 4 ) out float fragment_shininess;
 void main(void)
 {
 	fragment_position =varying_position; // write position to texture
-	fragment_normal = varying_normal; // write normal to texture
+	fragment_normal = normalize ( varying_normal); // write normal to texture
 	fragment_diffuse = varying_diffuse;
     fragment_specular = varying_specular;
 	fragment_shininess = varying_shininess;

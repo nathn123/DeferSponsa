@@ -12,7 +12,7 @@ uniform mat4 view_xform;
 uniform vec3 Intensity;
 uniform vec3 Direction;
 
-out vec4 fragment_colour;
+out vec3 fragment_colour;
 
 void main(void)
 {
@@ -46,5 +46,6 @@ void main(void)
 	//Id = (Ld * diffuse)* attenuation; // final diffuse intensity
 	//// final colour
 	//final_colour = Id + Is;
-	fragment_colour = vec4(diffuse+Intensity *max(0.0f,dot(-fragNor,Direction)), 0.0);
+
+	fragment_colour = (diffuse+Intensity) * max(0.0f,dot(-fragNor,Direction));
 }

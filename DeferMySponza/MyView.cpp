@@ -503,6 +503,7 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 		}
 		glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh.element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(mesh.element_offset), instances.size(), (mesh.position_offset / sizeof(glm::vec3)));
 	}
+	glUseProgram(0);
 }
 
 void MyView::ambientPass(glm::mat4 view, glm::mat4 projection)
@@ -544,7 +545,7 @@ void MyView::ambientPass(glm::mat4 view, glm::mat4 projection)
 	//	glBindVertexArray(light_quad_mesh_.vao);
 	//	glDrawElements(GL_TRIANGLES, light_quad_mesh_.element_count, GL_UNSIGNED_INT, 0);
 	//}
-
+	glUseProgram(0);
 }
 void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 {
@@ -560,9 +561,7 @@ void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 	glEnable(GL_BLEND);
 	glBlendEquation(GL_FUNC_ADD);
 	glBlendFunc(GL_ONE, GL_ONE);
-	//cull front faces
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_FRONT);
+
 	//bind gbuffer textures to tex units
 
 	glUseProgram(Dir_prog);
@@ -573,7 +572,7 @@ void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 	GLint sampshiloc = glGetUniformLocation(Dir_prog, "sampler_world_shininess");
 
 	SetUniforms(Dir_prog, view, projection);
-	
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
 	glUniform1i(sampposloc, 0);
@@ -589,23 +588,20 @@ void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_shininess_tex);
 	glUniform1i(sampshiloc, 4);
-	
-	//loop through light models
-	// load all dir lights
-	//int offset = 0;
-	
-	//glGetUniformLocation(Dir_prog, "Intensity");
-	//glGetUniformLocation(Dir_prog, "Direction");
 
 	for (auto i : scene_->getAllDirectionalLights())
 	{
 		glm::mat4 Matrix = glm::mat4(1);
-		glUniformMatrix4fv(glGetUniformLocation(Dir_prog, "Modelxform"), 1, false, glm::value_ptr( Matrix));
+		glUniformMatrix4fv(glGetUniformLocation(Dir_prog, "Modelxform"), 1, false, glm::value_ptr(Matrix));
 		glUniform3fv(glGetUniformLocation(Dir_prog, "Intensity"), 1, glm::value_ptr(i.getIntensity()));
 		glUniform3fv(glGetUniformLocation(Dir_prog, "Direction"), 1, glm::value_ptr(i.getDirection()));
 		glBindVertexArray(light_quad_mesh_.vao);
 		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 	}
+	//cull front faces
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+
 	glUseProgram(light_prog);
 	sampposloc = glGetUniformLocation(light_prog, "sampler_world_position");
 	sampnorloc = glGetUniformLocation(light_prog, "sampler_world_normal");
@@ -655,41 +651,7 @@ void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 		glDrawElements(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0);
 	}
 
-	/*offset = 0;*/
-	for (auto i : scene_->getAllSpotLights())
-	{
-		glBindBuffer(GL_UNIFORM_BUFFER, Light_BO);
-		glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights), &lights_[i.getId()], GL_STREAM_DRAW);
-		glBindVertexArray(light_cone_mesh_.vao);
-		glDrawElements(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0);
-	}
-
-	///*offset = 0;*/
-	//for (auto i : scene_->getAllSpotLights())
-	//{
-	//	glBindBuffer(GL_UNIFORM_BUFFER, Light_BO);
-	//	glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights), &lights_[i.getId()], GL_STREAM_DRAW);
-	//	glBindVertexArray(light_cone_mesh_.vao);
-	//	glDrawElements(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0);
-	//}
-
-	/*glBindVertexArray(light_cone_mesh_.vao);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_cone_mesh_.element_vbo);
-	glDrawElementsInstanced(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0, scene_->getAllSpotLights().size());*/
-	
-	
-	//auto totaloffset = 0;
-	//	glBindBuffer(GL_UNIFORM_BUFFER, Instance_BO);
-	//	glBufferSubData(GL_UNIFORM_BUFFER, totaloffset, sizeof(Per_Instance), &per_instance_.find(j)->second);
-	//	totaloffset += sizeof(Per_Instance);
-	//glDrawElementsInstanced(GL_TRIANGLES, element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(element_offset), instances.size());
-
-	/*glBindVertexArray(light_cone_mesh_.vao);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_cone_mesh_.element_vbo);
-	glDrawElementsInstanced(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0, scene_->getAllSpotLights().size());*/
-	
-
-
+	glUseProgram(0);
 }
 void MyView::AAPass()
 {
@@ -699,7 +661,7 @@ void MyView::AAPass()
 	AAEdgePass();
 	AABlendPass();
 	AANeighbourPass();
-
+	glUseProgram(0);
 }
 void MyView::ShadowPass()
 {
