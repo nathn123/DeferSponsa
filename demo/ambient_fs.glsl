@@ -3,12 +3,12 @@
 
 uniform vec3 ambient_light;
 
-out vec3 finalcolour;
+out vec4 finalcolour;
 
 void main(void)
 {
 
 	//ambient pass
 	//applied across whole scene so ...
-	finalcolour = ambient_light;
+	finalcolour = vec4(ambient_light,1.0);
 }

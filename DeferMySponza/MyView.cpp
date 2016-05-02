@@ -128,11 +128,15 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	std::vector<std::string>avertex_attrib = { "vertex_position"};
 	std::vector<std::string>afragment_attrib = { "finalcolour"};
 	CreateShader(ambient_prog,  "ambient", avertex_attrib, afragment_attrib);
+	//dir shaders
+	std::vector<std::string>dvertex_attrib = { "vertex_position" };
+	std::vector<std::string>dfragment_attrib = { "fragment_colour" };
+	CreateShader(Dir_prog, "dir", dvertex_attrib, dfragment_attrib);
 	//light shaders
 	std::vector<std::string>lvertex_attrib = { "vertex_position"};
 	std::vector<std::string>lfragment_attrib = { "fragment_colour"};
 	CreateShader(light_prog, "light", lvertex_attrib, lfragment_attrib);
-
+	
 	//CreateShader(SMAA_Blendprog, "SMAA_Blend", std::vector<std::string>(), std::vector<std::string>());
 	//glUseProgram(SMAA_Blendprog);
 	//glUniform1i(glGetUniformLocation(SMAA_Blendprog, "edge_tex"), 0);
@@ -323,6 +327,8 @@ windowViewDidReset(std::shared_ptr<tygra::Window> window,
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB32F, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, lbuffer_colour_rbo);
 
+	GLenum Buffer[] = { GL_COLOR_ATTACHMENT0};
+	glDrawBuffers(1, Buffer);
 	framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
 	if (framebuffer_status != GL_FRAMEBUFFER_COMPLETE) {
@@ -439,7 +445,7 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 	//light pass back buffer
 	LightPass(view, projection);
 	//post
-	ShadowPass();
+	//ShadowPass();
 	//AAPass();
 
 	//switch buffer
@@ -451,15 +457,18 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 {
 	// set framebuffer to gbuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fbo);
+	glClear(GL_COLOR_BUFFER_BIT);
 	//clear depth stencil
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_STENCIL_TEST);
+	//glEnable(GL_STENCIL_TEST);
 
 	
 	glClear(GL_DEPTH_BUFFER_BIT);
+	//glClear(GL_STENCIL_BUFFER_BIT);
 	//stencil write to 128
-	glStencilMask(128);
-	//glStencilFunc(GL_ALWAYS, 0, 0xff);
+	//glStencilFunc(GL_ALWAYS, 0, ~0);
+	//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	//glStencilMask(~0);
 	//set depth less than
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LEQUAL);
@@ -476,6 +485,7 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	glCullFace(GL_BACK);
 	
 	glUseProgram(gbuffer_prog);
 	SetUniforms(gbuffer_prog, view, projection);
@@ -503,8 +513,8 @@ void MyView::ambientPass(glm::mat4 view, glm::mat4 projection)
 	glClearColor(0.f, 0.f, 0.25f, 0.f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	//set stencil test to = 128 NO WRITE
-	glStencilFunc(GL_EQUAL, 128, ~0);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	//glStencilFunc(GL_EQUAL, 128, ~0);
+	//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 	// disable depth test
 	glDisable(GL_DEPTH_TEST);
 	// disable blend
@@ -515,9 +525,25 @@ void MyView::ambientPass(glm::mat4 view, glm::mat4 projection)
 	glUniform3fv(ambientlight,1,glm::value_ptr(scene_->getAmbientLightIntensity()));
 	SetUniforms(ambient_prog, view, projection);
 
+	
 	// draw quad
 	glBindVertexArray(light_quad_mesh_.vao);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4); 
+
+
+
+	//for (auto i : scene_->getAllDirectionalLights())
+	//{
+	//		glm::mat4 Matrix = glm::mat4(1);
+	//		Lights newlight;
+	//		newlight.Modelxform = Matrix;
+	//		newlight.intensity = i.getIntensity();
+	//		newlight.direction = i.getDirection();
+	//	glBindBuffer(GL_UNIFORM_BUFFER, Light_BO);
+	//	glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights), &newlight, GL_STREAM_DRAW);
+	//	glBindVertexArray(light_quad_mesh_.vao);
+	//	glDrawElements(GL_TRIANGLES, light_quad_mesh_.element_count, GL_UNSIGNED_INT, 0);
+	//}
 
 }
 void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
@@ -525,30 +551,32 @@ void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 	//bind lbuffer as framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, lbuffer_fbo);
 	// set stencil to equal 128 NO WRITE
-	glStencilFunc(GL_EQUAL, 128, ~0);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	//glStencilFunc(GL_EQUAL, 128, ~0);
+	//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 	//disable depth
 	glDisable(GL_DEPTH_TEST);
+	//glDisable(GL_STENCIL_TEST);
 	//enable blend to addative
 	glEnable(GL_BLEND);
 	glBlendEquation(GL_FUNC_ADD);
 	glBlendFunc(GL_ONE, GL_ONE);
+	//cull front faces
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
 	//bind gbuffer textures to tex units
 
-	glUseProgram(light_prog);
-	GLint sampposloc = glGetUniformLocation(light_prog, "sampler_world_position");
-	GLint sampnorloc = glGetUniformLocation(light_prog, "sampler_world_normal");
-	GLint sampdifloc = glGetUniformLocation(light_prog, "sampler_world_diffuse");
-	GLint sampspeloc = glGetUniformLocation(light_prog, "sampler_world_specular");
-	GLint sampshiloc = glGetUniformLocation(light_prog, "sampler_world_shininess");
+	glUseProgram(Dir_prog);
+	GLint sampposloc = glGetUniformLocation(Dir_prog, "sampler_world_position");
+	GLint sampnorloc = glGetUniformLocation(Dir_prog, "sampler_world_normal");
+	GLint sampdifloc = glGetUniformLocation(Dir_prog, "sampler_world_diffuse");
+	GLint sampspeloc = glGetUniformLocation(Dir_prog, "sampler_world_specular");
+	GLint sampshiloc = glGetUniformLocation(Dir_prog, "sampler_world_shininess");
 
-	SetUniforms(light_prog, view, projection);
+	SetUniforms(Dir_prog, view, projection);
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
 	glUniform1i(sampposloc, 0);
-
-	
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex);
 	glUniform1i(sampnorloc, 1);
@@ -565,16 +593,42 @@ void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 	//loop through light models
 	// load all dir lights
 	//int offset = 0;
-	//for (auto i : scene_->getAllDirectionalLights())
-	//{
-	//	glBindBuffer(GL_UNIFORM_BUFFER, Light_BO);
-	//	glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights), &lights_[i.getId()], GL_STREAM_DRAW);
-	//	glBindVertexArray(light_quad_mesh_.vao);
-	//	glDrawElements(GL_TRIANGLES, light_quad_mesh_.element_count, GL_UNSIGNED_INT, 0);
-	//}
-	/*glBindVertexArray(light_quad_mesh_.vao);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_quad_mesh_.element_vbo);
-	glDrawElementsInstanced(GL_TRIANGLES, light_quad_mesh_.element_count, GL_UNSIGNED_INT, 0, scene_->getAllDirectionalLights().size());*/
+	
+	//glGetUniformLocation(Dir_prog, "Intensity");
+	//glGetUniformLocation(Dir_prog, "Direction");
+
+	for (auto i : scene_->getAllDirectionalLights())
+	{
+		glm::mat4 Matrix = glm::mat4(1);
+		glUniformMatrix4fv(glGetUniformLocation(Dir_prog, "Modelxform"), 1, false, glm::value_ptr( Matrix));
+		glUniform3fv(glGetUniformLocation(Dir_prog, "Intensity"), 1, glm::value_ptr(i.getIntensity()));
+		glUniform3fv(glGetUniformLocation(Dir_prog, "Direction"), 1, glm::value_ptr(i.getDirection()));
+		glBindVertexArray(light_quad_mesh_.vao);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	}
+	glUseProgram(light_prog);
+	sampposloc = glGetUniformLocation(light_prog, "sampler_world_position");
+	sampnorloc = glGetUniformLocation(light_prog, "sampler_world_normal");
+	sampdifloc = glGetUniformLocation(light_prog, "sampler_world_diffuse");
+	sampspeloc = glGetUniformLocation(light_prog, "sampler_world_specular");
+	sampshiloc = glGetUniformLocation(light_prog, "sampler_world_shininess");
+	SetUniforms(light_prog, view, projection);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex);
+	glUniform1i(sampposloc, 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex);
+	glUniform1i(sampnorloc, 1);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_diffuse_tex);
+	glUniform1i(sampdifloc, 2);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_specular_tex);
+	glUniform1i(sampspeloc, 3);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_shininess_tex);
+	glUniform1i(sampshiloc, 4);
+
 	for (auto i : scene_->getAllPointLights())
 	{
 		glBindBuffer(GL_UNIFORM_BUFFER, Light_BO);
@@ -592,6 +646,24 @@ void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 		glDrawElements(GL_TRIANGLES, light_sphere_mesh_.element_count, GL_UNSIGNED_INT, 0);
 	}
 
+<<<<<<< .mine
+	for (auto i : scene_->getAllSpotLights())
+	{
+		glBindBuffer(GL_UNIFORM_BUFFER, Light_BO);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights), &lights_[i.getId()], GL_STREAM_DRAW);
+		glBindVertexArray(light_cone_mesh_.vao);
+		glDrawElements(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0);
+	}
+||||||| .r11
+	/*offset = 0;*/
+	for (auto i : scene_->getAllSpotLights())
+	{
+		glBindBuffer(GL_UNIFORM_BUFFER, Light_BO);
+		glBufferData(GL_UNIFORM_BUFFER, sizeof(Lights), &lights_[i.getId()], GL_STREAM_DRAW);
+		glBindVertexArray(light_cone_mesh_.vao);
+		glDrawElements(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0);
+	}
+=======
 	///*offset = 0;*/
 	//for (auto i : scene_->getAllSpotLights())
 	//{
@@ -600,10 +672,25 @@ void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 	//	glBindVertexArray(light_cone_mesh_.vao);
 	//	glDrawElements(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0);
 	//}
+>>>>>>> .r12
+<<<<<<< .mine
+||||||| .r11
 	/*glBindVertexArray(light_cone_mesh_.vao);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_cone_mesh_.element_vbo);
 	glDrawElementsInstanced(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0, scene_->getAllSpotLights().size());*/
 	
+	
+	//auto totaloffset = 0;
+	//	glBindBuffer(GL_UNIFORM_BUFFER, Instance_BO);
+	//	glBufferSubData(GL_UNIFORM_BUFFER, totaloffset, sizeof(Per_Instance), &per_instance_.find(j)->second);
+	//	totaloffset += sizeof(Per_Instance);
+	//glDrawElementsInstanced(GL_TRIANGLES, element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(element_offset), instances.size());
+=======
+	/*glBindVertexArray(light_cone_mesh_.vao);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_cone_mesh_.element_vbo);
+	glDrawElementsInstanced(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0, scene_->getAllSpotLights().size());*/
+	
+>>>>>>> .r12
 
 }
 void MyView::AAPass()
@@ -618,6 +705,14 @@ void MyView::AAPass()
 }
 void MyView::ShadowPass()
 {
+	for each (auto  light in lights_)
+	{
+		if (light.second.shadows == true)
+		{
+			
+		}
+	}
+
 
 }
 void MyView::SetUniforms(GLuint shader, glm::mat4 view_xform, glm::mat4 projection_xform)
@@ -634,6 +729,29 @@ void MyView::UpdateLights()
 {
 	// store all light data
 	
+<<<<<<< .mine
+	//for (auto i : scene_->getAllDirectionalLights())
+	//{
+	//	glm::mat4 Matrix = glm::mat4(1);
+	//	Lights newlight;
+	//	newlight.Modelxform = Matrix;
+	//	newlight.intensity = i.getIntensity();
+	//	newlight.direction = i.getDirection();
+	//	
+	//	lights_.insert(std::make_pair(i.getId(), newlight));
+	//}
+||||||| .r11
+	for (auto i : scene_->getAllDirectionalLights())
+	{
+		glm::mat4 Matrix = glm::mat4(1);
+		Lights newlight;
+		newlight.Modelxform = Matrix;
+		newlight.intensity = i.getIntensity();
+		newlight.direction = i.getDirection();
+		
+		lights_.insert(std::make_pair(i.getId(), newlight));
+	}
+=======
 	for (auto t : scene_->getAllDirectionalLights())
 	{
 		glm::mat4 Matrix = glm::mat4(1);
@@ -644,6 +762,7 @@ void MyView::UpdateLights()
 		
 		lights_.insert(std::make_pair(t.getId(), newlight));
 	}
+>>>>>>> .r12
 	for (auto j : scene_->getAllPointLights())
 	{
 		glm::mat4 Matrix = glm::mat4(1);

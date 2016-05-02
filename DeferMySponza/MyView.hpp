@@ -146,6 +146,7 @@ private:
 	GLuint gbuffer_prog;
 	GLuint ambient_prog;
 	GLuint light_prog;
+	GLuint Dir_prog;
 	GLuint VAO;
 	GLuint VBO;
 	GLuint EBO;

@@ -91,5 +91,11 @@
     <None Include="..\demo\SMAA_Neighbour_vs.glsl">
       <Filter>Shaders\SMAA</Filter>
     </None>
+    <None Include="..\demo\dir_fs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\demo\dir_vs.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

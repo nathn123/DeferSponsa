@@ -324,6 +324,8 @@
   <ItemGroup>
     <None Include="..\demo\ambient_fs.glsl" />
     <None Include="..\demo\ambient_vs.glsl" />
+    <None Include="..\demo\dir_fs.glsl" />
+    <None Include="..\demo\dir_vs.glsl" />
     <None Include="..\demo\gbuffer_fs.glsl" />
     <None Include="..\demo\gbuffer_vs.glsl" />
     <None Include="..\demo\light_fs.glsl" />
