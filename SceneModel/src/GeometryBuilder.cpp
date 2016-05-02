@@ -18,8 +18,8 @@ using namespace SceneModel;
 
 GeometryBuilder::GeometryBuilder()
 {
-    if (!readFile("sponza_with_motion.tcf")) {
-        throw std::runtime_error("Failed to read sponza data file");
+    if (!readFile("sponza_with_friends_2x.tcf")) {
+        throw std::runtime_error("Failed to read sponza.tcf data file");
     }
 }
 

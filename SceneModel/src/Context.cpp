@@ -2,7 +2,6 @@
 #include "FirstPersonMovement.hpp"
 #include <tcf/SimpleScene.hpp>
 #include <random>
-#include <glm/gtx/transform.hpp>
 
 using namespace SceneModel;
 
@@ -27,8 +26,8 @@ Context::Context()
     start_time_ = std::chrono::system_clock::now();
     time_seconds_ = 0.f;
 
-    if (!readFile("sponza_with_motion.tcf")) {
-        throw std::runtime_error("Failed to read sponza data file");
+    if (!readFile("sponza_with_friends_2x.tcf")) {
+        throw std::runtime_error("Failed to read sponza.tcf data file");
     }
 
     animate_camera_ = false;
@@ -80,18 +79,7 @@ bool Context::readFile(std::string filepath)
 
     for (auto& instance : instances_)
     {
-		switch (instance.getMeshId())
-		{
-		case 300:
-		case 327:
-		case 328:
-		case 329:
-			instance.setStatic(false);
-			break;
-		default:
-			instance.setStatic(true);
-			break;
-		}
+        instance.setStatic(instance.getMeshId() != 300);
     }
 
     int redShapes[] = { 35, 36, 37, 38, 39, 40, 41, 42, 69, 70, 71, 72, 73, 74,
@@ -99,18 +87,18 @@ bool Context::readFile(std::string filepath)
     int greenShapes[] = { 8, 19, 31, 33, 54, 57, 67, 68, 66, 80 };
     int yellowShapes[] = { 4, 5, 6, 7, 23, 24, 25, 26, 27, 28, 29, 30, 44, 45,
         46, 47, 48, 49, 50, 51, 52, 53 };
-    int wheelShapes[] = { 81 };
-    int spinnerShapes[] = { 82 };
-    int pendulumShapes[] = { 83 };
+    int happyShapes[] = { 82 };
+    int bunnyShapes[] = { 81 };
+    int dragonShapes[] = { 83 };
     int *shapes[6] = { redShapes, greenShapes, yellowShapes,
-        wheelShapes, spinnerShapes, pendulumShapes };
+        happyShapes, bunnyShapes, dragonShapes };
     int numberOfShapes[] = {
         sizeof(redShapes) / sizeof(int),
         sizeof(greenShapes) / sizeof(int),
         sizeof(yellowShapes) / sizeof(int),
-        sizeof(wheelShapes) / sizeof(int),
-        sizeof(spinnerShapes) / sizeof(int),
-        sizeof(pendulumShapes) / sizeof(int) };
+        sizeof(happyShapes) / sizeof(int),
+        sizeof(bunnyShapes) / sizeof(int),
+        sizeof(dragonShapes) / sizeof(int) };
     glm::vec3 diffuse_colours[6] = {
         glm::vec3(1.f, 0.33f, 0.f),
         glm::vec3(0.2f, 0.8f, 0.2f),
@@ -256,45 +244,12 @@ void Context::update()
 
     for (auto& instance : instances_)
     {
-		switch (instance.getMeshId())
-		{
-		case 300: // vases
-		{
-			auto xform = instance.getTransformationMatrix();
-			const float bounce_y = 4;
-			xform[3].y = 6.6f + bounce_y * (0.5f + 0.5f * cosf(t));
-			instance.setTransformationMatrix(xform);
-			break;
-		}
-		case 327: // wheel
-		{
-			static float angle = 0;
-			angle += (2 + 2 * cosf(t));
-			auto pos_xform = glm::translate<float>(-75, 10, 0);
-			auto spin_xform = glm::rotate<float>(angle, 1, 0, 0);
-			instance.setTransformationMatrix(glm::mat4x3(pos_xform * spin_xform));
-			break;
-		}
-		case 328: // spinner
-		{
-			static float angle = 0;
-			angle += (5 + 5 * cosf(t));
-			auto pos_xform = glm::translate<float>(-10, 0, 0);
-			auto spin_xform = glm::rotate<float>(angle, 0, 1, 0);
-			instance.setTransformationMatrix(glm::mat4x3(pos_xform * spin_xform));
-			break;
-		}
-		case 329: // pendulum
-		{
-			const float angle = 30 * cosf(20 * t);
-			auto pos_xform = glm::translate<float>(55, 0, 0);
-			auto spin_xform = glm::rotate<float>(angle, 1, 0, 0);
-			instance.setTransformationMatrix(glm::mat4x3(pos_xform * spin_xform));
-			break;
-		}
-		default:
-			break;
-		}
+        if (instance.getMeshId() != 300) continue;
+
+        auto xform = instance.getTransformationMatrix();
+        const float bounce_y = 4;
+        xform[3].y = 6.6f + bounce_y * (0.5f + 0.5f * cosf(t));
+        instance.setTransformationMatrix(xform);
     }
 }
 
