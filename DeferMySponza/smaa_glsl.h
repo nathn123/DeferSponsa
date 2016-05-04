@@ -33,7 +33,7 @@ void main() \n
   texcoord = gl_MultiTexCoord0.xy; \n
   vec4 dummy1 = vec4(0); \n
   SMAAEdgeDetectionVS(dummy1, dummy2, texcoord, offset); \n
-  gl_Position = ftransform(); \n
+  gl_Position = TYnsform(); \n
 } \n
 );
 

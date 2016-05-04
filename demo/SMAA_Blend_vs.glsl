@@ -1,12 +1,10 @@
-#version 330 compatibility
-#ifndef SMAA_PIXEL_SIZE
-#define SMAA_PIXEL_SIZE vec2(1.0 / 1280.0, 1.0 / 720.0)
-#endif
-#define SMAA_PRESET_ULTRA 1
-#define SMAA_GLSL_3 1
-#define SMAA_ONLY_COMPILE_VS 1
-#include "SMAA.h"
-
+//#version 330 compatibility
+//#ifndef SMAA_PIXEL_SIZE
+//#define SMAA_PIXEL_SIZE vec2(1.0 / 1280.0, 1.0 / 720.0)
+//#endif
+//#define SMAA_PRESET_ULTRA 1
+//#define SMAA_GLSL_3 1
+//#define SMAA_ONLY_COMPILE_VS 1
 out vec2 texcoord;
 out vec2 pixcoord;
 out vec4 offset[3];
@@ -18,3 +16,5 @@ void main()
   SMAABlendingWeightCalculationVS(dummy1, dummy2, texcoord, pixcoord, offset);
   gl_Position = ftransform();
 }
+
+

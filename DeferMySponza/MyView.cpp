@@ -137,17 +137,20 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	std::vector<std::string>lfragment_attrib = { "fragment_colour"};
 	CreateShader(light_prog, "light", lvertex_attrib, lfragment_attrib);
 	
-	//CreateShader(SMAA_Blendprog, "SMAA_Blend", std::vector<std::string>(), std::vector<std::string>());
+	//std::vector<std::string>SMAA_Blend_Defines = {"SMAA_PRESET_ULTRA 1", "SMAA_GLSL_3 1"};
+	//CreateShaderAA(SMAA_Blendprog, "SMAA_Blend", SMAA_Blend_Defines);
 	//glUseProgram(SMAA_Blendprog);
 	//glUniform1i(glGetUniformLocation(SMAA_Blendprog, "edge_tex"), 0);
 	//glUniform1i(glGetUniformLocation(SMAA_Blendprog, "area_tex"), 1);
 	//glUniform1i(glGetUniformLocation(SMAA_Blendprog, "search_tex"), 2);
 
-	//CreateShader(SMAA_Edgeprog, "SMAA_Edge", std::vector<std::string>(), std::vector<std::string>());
+	//std::vector<std::string>SMAA_Edge_Defines = { "SMAA_PRESET_ULTRA 1", "SMAA_GLSL_3 1" };
+	//CreateShaderAA(SMAA_Edgeprog, "SMAA_Edge", SMAA_Edge_Defines);
 	//glUseProgram(SMAA_Edgeprog);
 	//glUniform1i(glGetUniformLocation(SMAA_Edgeprog, "Input_tex"), 0);
 
-	//CreateShader(SMAA_Neighbourprog, "SMAA_Neighbour", std::vector<std::string>(), std::vector<std::string>());
+	//std::vector<std::string>SMAA_Neigh_Defines = { "SMAA_PRESET_ULTRA 1", "SMAA_GLSL_3 1" };
+	//CreateShaderAA(SMAA_Neighbourprog, "SMAA_Neighbour", SMAA_Neigh_Defines);
 	//glUseProgram(SMAA_Neighbourprog);
 	//glUniform1i(glGetUniformLocation(SMAA_Neighbourprog, "Input_tex"), 0);
 	//glUniform1i(glGetUniformLocation(SMAA_Neighbourprog, "blend_tex"), 1);
@@ -158,6 +161,8 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	unsigned int totaloffset = 0;
 	unsigned int totalelementoffset = 0;
 	unsigned int maximum_instance = 0;
+	std::vector<glm::vec3> Pos, Norm, VBODATA;
+	std::vector<unsigned int> EBODATA;
 	for (auto i : geometry_->getAllMeshes())
 	{
 		Mesh newmesh;
@@ -168,31 +173,36 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 		newmesh.element_offset = totalelementoffset;
 		totalelementoffset += i.getElementArray().size()* sizeof(unsigned int);
 		newmesh.element_count = i.getElementArray().size();
+		newmesh.id = i.getId();
 		//assign ID
-		mesh_.insert(std::make_pair(i.getId(), newmesh));
+		mesh_.push_back( newmesh);
+		Pos.insert(Pos.end(), i.getPositionArray().begin(), i.getPositionArray().end());
+		Norm.insert(Norm.end(), i.getNormalArray().begin(), i.getNormalArray().end());
+		//for some reson insert doesnt want to work
+		//EBODATA.insert(EBODATA.end(), i.getElementArray().begin(), i.getElementArray().end());
+		for each (auto ele in i.getElementArray())
+			EBODATA.push_back(ele);
 	}
-	for (auto i : scene_->getAllInstances())
+	for (int i = 0; i < mesh_.size(); i++)
 	{
-		Per_Instance newinst;
-		auto mat = scene_->getMaterialById(i.getMaterialId());
-		newinst.Model_xform = glm::mat4(i.getTransformationMatrix());
-		newinst.diffuse = mat.getDiffuseColour();
-		newinst.shininess = mat.getShininess();
-		newinst.specular = mat.getSpecularColour();
-		per_instance_.insert(std::make_pair(i.getId(), newinst));
+		//if (i.isStatic())
+		//	continue;
+		std::vector<Per_Instance> MeshInstances;
+		for (auto j : scene_->getInstancesByMeshId(mesh_[i].id))
+		{
+			auto p = scene_->getInstanceById(j);
+			Per_Instance newinst = Per_Instance();
+			
+			auto mat = scene_->getMaterialById(p.getMaterialId());
+			newinst.Model_xform = glm::mat4(p.getTransformationMatrix());
+			newinst.diffuse = mat.getDiffuseColour();
+			newinst.shininess = mat.getShininess();
+			newinst.specular = mat.getSpecularColour();
+			MeshInstances.push_back(newinst);
+		}
+		InstanceData.push_back(MeshInstances);
+	}
 
-		if (scene_->getInstancesByMeshId(i.getMeshId()).size()>maximum_instance)
-			maximum_instance = scene_->getInstancesByMeshId(i.getMeshId()).size();
-	}
-	std::vector<glm::vec3> Pos, Norm, VBODATA;
-	std::vector<unsigned int> EBODATA;
-	for (auto i : mesh_)
-	{
-		auto mesh = geometry_->getMeshById(i.first);
-		Pos.insert(Pos.end(),mesh.getPositionArray().begin(),mesh.getPositionArray().end());
-		Norm.insert(Norm.end(), mesh.getNormalArray().begin(), mesh.getNormalArray().end());
-		EBODATA.insert(EBODATA.end(), mesh.getElementArray().begin(), mesh.getElementArray().end());
-	}
 	VBODATA.insert(VBODATA.end(),Pos.begin(),Pos.end());
 	VBODATA.insert(VBODATA.end(), Norm.begin(), Norm.end());
 
@@ -327,6 +337,11 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	glGenFramebuffers(1, &SMAA_edge_fbo);
 	glGenFramebuffers(1, &SMAA_blend_fbo);
 
+	//Shadow Framebuffer
+	glGenFramebuffers(1, &Shadow_fbo);
+
+	// Gen Queries
+	glGenQueries(1, &Gbuffer_Query);
 }
 
 void MyView::
@@ -430,7 +445,16 @@ windowViewDidReset(std::shared_ptr<tygra::Window> window,
 		tglDebugMessage(GL_DEBUG_SEVERITY_HIGH_ARB, "framebuffer not complete");
 	}
 
+	//glBindFramebuffer(GL_FRAMEBUFFER, Shadow_fbo);
 
+	//glBindRenderbuffer(GL_RENDERBUFFER, Shadow_depth_rbo);
+	//glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32F, width, height);
+	//glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, Shadow_depth_rbo);
+
+	framebuffer_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (framebuffer_status != GL_FRAMEBUFFER_COMPLETE) {
+		tglDebugMessage(GL_DEBUG_SEVERITY_HIGH_ARB, "framebuffer not complete");
+	}
 	
 
 }
@@ -443,9 +467,9 @@ windowViewDidStop(std::shared_ptr<tygra::Window> window)
 void MyView::
 windowViewRender(std::shared_ptr<tygra::Window> window)
 {
-    assert(scene_ != nullptr);
+	assert(scene_ != nullptr);
 
-    
+
 
 	auto camera = scene_->getCamera();
 	GLint Viewport[4];
@@ -454,32 +478,47 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 	auto view = glm::lookAt(camera.getPosition(), camera.getDirection(), scene_->getUpDirection());
 	auto projection = glm::perspective(camera.getVerticalFieldOfViewInDegrees(), aspect, camera.getNearPlaneDistance(), camera.getFarPlaneDistance());
 
-	UpdateLights();
+	//UpdateLights();
+	UpdateMeshs();
 	// draw to GBuffer
-	gbufferPass(view,projection);
+
+	//gbufferPass(view,projection);
+	
 	//ambient directional lights pass back buffer
-	//ambientPass(view, projection);
+	ambientPass(view, projection);
 	//light pass back buffer
 	//LightPass(view, projection);
 	//post
 	//ShadowPass();
+	//glBindFramebuffer(GL_FRAMEBUFFER, lbuffer_fbo);
+	//glBindTexture(GL_TEXTURE_RECTANGLE, SMAA_InputTex);
+	//glCopyTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, 0, 0, Viewport[2], Viewport[3]); // copy final scene image to smaa input texture
 	//AAPass();
 
 	//switch buffer
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, gbuffer_fbo);
+
+	
+
+
+	//glBindFramebuffer(GL_READ_FRAMEBUFFER, SMAA_blend_fbo);
+	//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	//glBlitFramebuffer(0, 0, Viewport[2], Viewport[3], 0, 0, Viewport[2], Viewport[3], GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, lbuffer_fbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, Viewport[2], Viewport[3], 0, 0, Viewport[2], Viewport[3], GL_COLOR_BUFFER_BIT, GL_LINEAR);
 }
 void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 {
 	// set framebuffer to gbuffer
+
+
 	glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fbo);
 	glClear(GL_COLOR_BUFFER_BIT);
 	//clear depth stencil
 	glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_STENCIL_TEST);
-
-	
 	glClear(GL_DEPTH_BUFFER_BIT);
 	//glClear(GL_STENCIL_BUFFER_BIT);
 	//stencil write to 128
@@ -492,6 +531,7 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 	//disable blend
 	glDisable(GL_BLEND);
 	//loop drawing
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 	glActiveTexture(GL_TEXTURE1);
@@ -503,24 +543,17 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 	glCullFace(GL_BACK);
-	
+
 	glUseProgram(gbuffer_prog);
 	SetUniforms(gbuffer_prog, view, projection);
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, IBO);
-	for (auto i : geometry_->getAllMeshes())
+	for (int i = 0; i < mesh_.size();i++)
 	{
-		auto mesh = mesh_.find(i.getId())->second;
-		auto instances = scene_->getInstancesByMeshId(i.getId());
-		auto totaloffset = 0; 
-		for (auto j : instances)
-		{
-			glBufferSubData(GL_ARRAY_BUFFER, totaloffset, sizeof(Per_Instance), &per_instance_.find(j)->second);
-			totaloffset += sizeof(Per_Instance);
-		}
-		glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh.element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(mesh.element_offset), instances.size(), mesh.position_offset);
+		glBufferData(GL_ARRAY_BUFFER, InstanceData[i].size()*sizeof(Per_Instance), InstanceData[i].data(), GL_STREAM_DRAW);
+		glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh_[i].element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(mesh_[i].element_offset), InstanceData[i].size(), mesh_[i].position_offset);
 	}
+
 	glUseProgram(0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void MyView::ambientPass(glm::mat4 view, glm::mat4 projection)
@@ -542,14 +575,10 @@ void MyView::ambientPass(glm::mat4 view, glm::mat4 projection)
 	GLint ambientlight = glGetUniformLocation(ambient_prog, "ambient_light");
 	glUniform3fv(ambientlight,1,glm::value_ptr(scene_->getAmbientLightIntensity()));
 	SetUniforms(ambient_prog, view, projection);
-
-	
 	// draw quad
 	glBindVertexArray(light_quad_mesh_.vao);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4); 
-
-
-
+	glUseProgram(0);
 	//for (auto i : scene_->getAllDirectionalLights())
 	//{
 	//		glm::mat4 Matrix = glm::mat4(1);
@@ -562,7 +591,6 @@ void MyView::ambientPass(glm::mat4 view, glm::mat4 projection)
 	//	glBindVertexArray(light_quad_mesh_.vao);
 	//	glDrawElements(GL_TRIANGLES, light_quad_mesh_.element_count, GL_UNSIGNED_INT, 0);
 	//}
-	glUseProgram(0);
 }
 void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 {
@@ -670,26 +698,24 @@ void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 
 	glUseProgram(0);
 }
-void MyView::AAPass()
-{
-	glBindFramebuffer(GL_FRAMEBUFFER, SMAA_Fbuffer);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glUseProgram(SMAA_prog);
-	AAEdgePass();
-	AABlendPass();
-	AANeighbourPass();
-	glUseProgram(0);
-}
 void MyView::ShadowPass()
 {
+	glCullFace(GL_FRONT);
 	for each (auto  light in lights_)
 	{
 		if (light.second.shadows == true)
 		{
+			GLint Viewport[4];
+			glGetIntegerv(GL_VIEWPORT, Viewport);
+			auto aspect = Viewport[2] / (float)Viewport[3];
+			auto view = glm::lookAt(light.second.position, light.second.direction, scene_->getUpDirection());
+			//auto projection = glm::perspective(light.second.coneangledegrees, aspect, camera.getNearPlaneDistance(), camera.getFarPlaneDistance());
+			// only light that emit shadows
+
 			
 		}
 	}
-
+	glCullFace(GL_NONE);
 
 }
 void MyView::SetUniforms(GLuint shader, glm::mat4 view_xform, glm::mat4 projection_xform)
@@ -758,6 +784,28 @@ void MyView::UpdateLights()
 		lights_.insert(std::make_pair(i.getId(), newlight));
 	}
 }
+void MyView::UpdateMeshs()
+{
+	InstanceData.clear();
+	for (int i = 0; i < mesh_.size(); i++)
+	{
+		//if (i.isStatic())
+		//	continue;
+		std::vector<Per_Instance>NewInstace;
+		for (auto j : scene_->getInstancesByMeshId(mesh_[i].id))
+		{
+			auto p = scene_->getInstanceById(j);
+			Per_Instance newinst;
+			auto mat = scene_->getMaterialById(p.getMaterialId());
+			newinst.Model_xform = glm::mat4(p.getTransformationMatrix());
+			newinst.diffuse = mat.getDiffuseColour();
+			newinst.shininess = mat.getShininess();
+			newinst.specular = mat.getSpecularColour();
+			NewInstace.push_back(newinst);
+		}
+		InstanceData.push_back(NewInstace);
+	}
+}
 
 bool MyView::CreateShader(GLuint& shader_program,
 	std::string shader_name,
@@ -796,7 +844,6 @@ bool MyView::CreateShader(GLuint& shader_program,
 		std::cerr << log << std::endl;
 		return false;
 	}
-
 	// attach shaders to the program
 	glAttachShader(shader_program, vshader);
 	for (int i = 0; i < attriblocations.size(); i++)
@@ -821,6 +868,12 @@ bool MyView::CreateShader(GLuint& shader_program,
 	return true;
 }
 
+void MyView::AAPass()
+{
+	AAEdgePass();
+	AABlendPass();
+	AANeighbourPass();
+}
 void MyView::AAEdgePass()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, SMAA_edge_fbo);
@@ -880,4 +933,70 @@ void MyView::AANeighbourPass()
 
 	glDisable(GL_FRAMEBUFFER_SRGB);
 
+}
+bool MyView::CreateShaderAA(GLuint& shader_program,
+	std::string shader_name, 
+	std::vector<std::string> DefineVars)
+{
+	GLint compile_status = 0;
+	shader_program = glCreateProgram();
+	GLuint vshader;
+	vshader = glCreateShader(GL_VERTEX_SHADER); // create shader
+	auto test = tygra::stringFromFile("SMAA.h");
+	std::string preDefine = { "#version 330 compatibility\n\
+						   #ifndef SMAA_PIXEL_SIZE\n\
+						   #define SMAA_PIXEL_SIZE vec2(1.0 / 1280.0, 1.0 / 720.0)\n\
+							#endif\n\
+							#define SMAA_ONLY_COMPILE_VS 1\n"};
+	std::string defines;
+	for each(auto define in DefineVars)
+		defines += "#define " + define + "\n";
+	std::string vertex_shader_string = preDefine + defines + tygra::stringFromFile("SMAA.h") + tygra::stringFromFile(shader_name + "_vs.glsl");; // load shader file
+	const char *vertex_shader_code = vertex_shader_string.c_str();
+	glShaderSource(vshader, 1, (const GLchar **)&vertex_shader_code, NULL);
+	glCompileShader(vshader);
+	glGetShaderiv(vshader, GL_COMPILE_STATUS, &compile_status);
+	if (compile_status != GL_TRUE) {
+		const int string_length = 1024;
+		GLchar log[string_length] = "compile failed";
+		glGetShaderInfoLog(vshader, string_length, NULL, log);
+		std::cerr << log << std::endl;
+		return false;
+	}
+
+	compile_status = 0;
+	preDefine = { "#version 330 compatibility\n\
+				  #ifndef SMAA_PIXEL_SIZE\n\
+				#define SMAA_PIXEL_SIZE vec2(1.0 / 1280.0, 1.0 / 720.0)\n\
+				#endif\n\
+				#define SMAA_ONLY_COMPILE_PS 1\n" };
+	GLuint fshader;
+	fshader = glCreateShader(GL_FRAGMENT_SHADER); // create shader
+	std::string frag_shader_string = preDefine + defines + tygra::stringFromFile("SMAA.h") + tygra::stringFromFile(shader_name + "_fs.glsl");; // load shader file
+	const char *frag_shader_code = frag_shader_string.c_str();
+	glShaderSource(fshader, 1, (const GLchar **)&frag_shader_code, NULL);
+	glCompileShader(fshader);
+	glGetShaderiv(fshader, GL_COMPILE_STATUS, &compile_status);
+	if (compile_status != GL_TRUE) {
+		const int string_length = 1024;
+		GLchar log[string_length] = "compile failed";
+		glGetShaderInfoLog(fshader, string_length, NULL, log);
+		std::cerr << log << std::endl;
+		return false;
+	}
+
+	glDeleteShader(vshader);
+	glDeleteShader(fshader);
+	glLinkProgram(shader_program);
+	compile_status = 0;
+	glGetProgramiv(shader_program, GL_LINK_STATUS, &compile_status);
+	if (compile_status != GL_TRUE)
+	{
+		const int string_length = 10240;
+		GLchar log[string_length] = "compile failed";
+		glGetProgramInfoLog(shader_program, string_length, NULL, log);
+		std::cerr << log << std::endl;
+		return false;
+	}
+	return true;
 }

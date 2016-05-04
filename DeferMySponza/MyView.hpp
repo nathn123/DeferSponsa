@@ -35,13 +35,28 @@ private:
     void
     windowViewRender(std::shared_ptr<tygra::Window> window) override;
 
+		struct Per_Instance
+	{
+		glm::mat4 Model_xform;
+		glm::vec3 specular;
+		float shininess;
+		glm::vec3 diffuse;
+		float padding;
 
+		Per_Instance() :
+			Model_xform(0),
+			specular(0),
+			diffuse(0),
+			shininess(0),
+			padding(0){}
+	};
 	struct Mesh
 	{
 		unsigned int position_offset;
 		unsigned int normal_offset;
 		unsigned int element_offset;
 		unsigned int element_count;
+		unsigned int id;
 
 		Mesh() :
 			position_offset(0),
@@ -98,21 +113,9 @@ private:
 			direction(0),
 			shadows(-1) {}
 	};
-	struct Per_Instance
-	{
-		glm::mat4 Model_xform;
-		glm::vec3 specular;
-		float shininess;
-		glm::vec3 diffuse;
-		float padding;
-
-		Per_Instance() :
-			Model_xform(0),
-			specular(0),
-			diffuse(0),
-			shininess(0),
-			padding(0){}
-	};
+	
+	void
+		UpdateMeshs();
 	void
 		gbufferPass(glm::mat4 view, glm::mat4 projection);
 	void
@@ -136,6 +139,8 @@ private:
 
 	bool
 		CreateShader(GLuint& shader_program, std::string shader_name, std::vector<std::string> attriblocations, std::vector<std::string> fragdatalocations);
+	bool
+		CreateShaderAA(GLuint& shader_program, std::string shader_name, std::vector<std::string> Defines);
 
 	std::shared_ptr<const SceneModel::Context> scene_;
 	std::shared_ptr<SceneModel::GeometryBuilder> geometry_;
@@ -171,14 +176,25 @@ private:
 	GLuint SMAA_edge_fbo;
 	GLuint SMAA_blend_fbo;
 	GLuint SMAA_Neighbourprog;
-	GLuint SMAA_Fbuffer;
 	GLuint SMAA_edgeTex;
 	GLuint SMAA_blendTex;
 	GLuint SMAA_areaTex;
 	GLuint SMAA_seachTex;
 
-	std::unordered_map<SceneModel::MeshId, Mesh> mesh_;
-	std::unordered_map<SceneModel::InstanceId, Per_Instance> per_instance_;
+	//shadow vars
+	GLuint Shadow_fbo;
+	GLuint Shadow_depth_rbo;
+
+	// perf markes
+	GLuint Gbuffer_Query;
+	GLuint Gbuffer_Query1;
+	GLuint Gbuffer_Query2;
+	GLuint Gbuffer_Query3;
+
+	//std::unordered_map<SceneModel::MeshId, Mesh> mesh_;
+	std::vector< Mesh> mesh_;
+	std::vector<std::vector<Per_Instance>> InstanceData;
+	//std::unordered_map<SceneModel::InstanceId, Per_Instance> per_instance_;
 	std::unordered_map<SceneModel::LightId, Lights> lights_;
 
 };
