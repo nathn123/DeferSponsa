@@ -163,8 +163,8 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 		Mesh newmesh;
 		// calculate offsets
 		newmesh.position_offset = totaloffset;
-		newmesh.normal_offset = newmesh.position_offset + i.getPositionArray().size() *sizeof(glm::vec3);
-		totaloffset = newmesh.normal_offset + i.getNormalArray().size() *sizeof(glm::vec3);
+		totaloffset += i.getPositionArray().size();
+
 		newmesh.element_offset = totalelementoffset;
 		totalelementoffset += i.getElementArray().size()* sizeof(unsigned int);
 		newmesh.element_count = i.getElementArray().size();
@@ -184,38 +184,55 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 		if (scene_->getInstancesByMeshId(i.getMeshId()).size()>maximum_instance)
 			maximum_instance = scene_->getInstancesByMeshId(i.getMeshId()).size();
 	}
-
-	// create empty buffer
-
+	std::vector<glm::vec3> Pos, Norm, VBODATA;
+	std::vector<unsigned int> EBODATA;
+	for (auto i : mesh_)
+	{
+		auto mesh = geometry_->getMeshById(i.first);
+		Pos.insert(Pos.end(),mesh.getPositionArray().begin(),mesh.getPositionArray().end());
+		Norm.insert(Norm.end(), mesh.getNormalArray().begin(), mesh.getNormalArray().end());
+		EBODATA.insert(EBODATA.end(), mesh.getElementArray().begin(), mesh.getElementArray().end());
+	}
+	VBODATA.insert(VBODATA.end(),Pos.begin(),Pos.end());
+	VBODATA.insert(VBODATA.end(), Norm.begin(), Norm.end());
 
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, totaloffset, nullptr, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, VBODATA.size() * sizeof(glm::vec3), VBODATA.data(), GL_STATIC_DRAW);
 	glGenBuffers(1, &IBO);
 	glBindBuffer(GL_ARRAY_BUFFER, IBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Per_Instance)* maximum_instance, nullptr, GL_STREAM_DRAW);
 	glGenBuffers(1, &EBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, totalelementoffset, nullptr, GL_STATIC_DRAW);
-	for (auto i : mesh_)
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		auto mesh = geometry_->getMeshById(i.first);
-		//buffer the data
-		// position data
-		glBufferSubData(GL_ARRAY_BUFFER, i.second.position_offset,
-			mesh.getPositionArray().size() * sizeof(glm::vec3),
-			mesh.getPositionArray().data());
-		//normal data
-		glBufferSubData(GL_ARRAY_BUFFER, i.second.normal_offset,
-			mesh.getNormalArray().size() * sizeof(glm::vec3),
-			mesh.getNormalArray().data());
-		//element data
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-		glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, i.second.element_offset,
-			mesh.getElementArray().size() * sizeof(unsigned int),
-			mesh.getElementArray().data());
-	}
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, EBODATA.size() * sizeof(unsigned int), EBODATA.data(), GL_STATIC_DRAW);
+	//int offset = 0;
+	//for (auto i : mesh_)
+	//{
+	//	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	//	auto mesh = geometry_->getMeshById(i.first);
+	//	//buffer the data
+	//	// position data
+	//	glBufferSubData(GL_ARRAY_BUFFER, i.second.position_offset,
+	//		mesh.getPositionArray().size() * sizeof(glm::vec3),
+	//		mesh.getPositionArray().data());
+	//	offset += mesh.getPositionArray().size();
+	//	//element data
+	//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	//	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, i.second.element_offset,
+	//		mesh.getElementArray().size() * sizeof(unsigned int),
+	//		mesh.getElementArray().data());
+	//}
+	//int off2 = 0;
+	//for (auto i : mesh_)
+	//{
+	//	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	//	auto mesh = geometry_->getMeshById(i.first);
+	//	//normal data
+	//	glBufferSubData(GL_ARRAY_BUFFER, offset + off2,
+	//		mesh.getNormalArray().size() * sizeof(glm::vec3),
+	//		mesh.getNormalArray().data());
+	//	off2 += mesh.getNormalArray().size() * sizeof(glm::vec3);
+	//}
 	//generate VAO
 	glGenVertexArrays(1, &VAO);
 	//bind VAO
@@ -230,7 +247,7 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), TGL_BUFFER_OFFSET(mesh_.begin()->second.normal_offset));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), TGL_BUFFER_OFFSET(Pos.size()*sizeof(glm::vec3)));
 
 
 	glBindBuffer(GL_ARRAY_BUFFER, IBO);
@@ -441,15 +458,15 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 	// draw to GBuffer
 	gbufferPass(view,projection);
 	//ambient directional lights pass back buffer
-	ambientPass(view, projection);
+	//ambientPass(view, projection);
 	//light pass back buffer
-	LightPass(view, projection);
+	//LightPass(view, projection);
 	//post
 	//ShadowPass();
 	//AAPass();
 
 	//switch buffer
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, lbuffer_fbo);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, gbuffer_fbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, Viewport[2], Viewport[3], 0, 0, Viewport[2], Viewport[3], GL_COLOR_BUFFER_BIT, GL_LINEAR);
 }
@@ -501,7 +518,7 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 			glBufferSubData(GL_ARRAY_BUFFER, totaloffset, sizeof(Per_Instance), &per_instance_.find(j)->second);
 			totaloffset += sizeof(Per_Instance);
 		}
-		glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh.element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(mesh.element_offset), instances.size(), (mesh.position_offset / sizeof(glm::vec3)));
+		glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh.element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(mesh.element_offset), instances.size(), mesh.position_offset);
 	}
 	glUseProgram(0);
 }
