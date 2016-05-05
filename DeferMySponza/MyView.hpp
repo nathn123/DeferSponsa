@@ -102,7 +102,7 @@ private:
 		glm::vec3 intensity;
 		float coneangledegrees;
 		glm::vec3 direction;
-		int shadows;
+		bool shadows;
 
 		Lights() :
 			Modelxform(0),
@@ -194,7 +194,7 @@ private:
 	//std::unordered_map<SceneModel::MeshId, Mesh> mesh_;
 	std::vector< Mesh> mesh_;
 	std::vector<std::vector<Per_Instance>> InstanceData;
-	//std::unordered_map<SceneModel::InstanceId, Per_Instance> per_instance_;
+
 	std::unordered_map<SceneModel::LightId, Lights> lights_;
 
 };

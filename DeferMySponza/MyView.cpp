@@ -478,16 +478,13 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 	auto view = glm::lookAt(camera.getPosition(), camera.getDirection(), scene_->getUpDirection());
 	auto projection = glm::perspective(camera.getVerticalFieldOfViewInDegrees(), aspect, camera.getNearPlaneDistance(), camera.getFarPlaneDistance());
 
-	//UpdateLights();
+	UpdateLights();
 	UpdateMeshs();
 	// draw to GBuffer
 
-	//gbufferPass(view,projection);
-	
-	//ambient directional lights pass back buffer
+	gbufferPass(view,projection);
 	ambientPass(view, projection);
-	//light pass back buffer
-	//LightPass(view, projection);
+	LightPass(view, projection);
 	//post
 	//ShadowPass();
 	//glBindFramebuffer(GL_FRAMEBUFFER, lbuffer_fbo);
@@ -542,16 +539,20 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 	glActiveTexture(GL_TEXTURE4);
 	glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
 	glUseProgram(gbuffer_prog);
 	SetUniforms(gbuffer_prog, view, projection);
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, IBO);
 	for (int i = 0; i < mesh_.size();i++)
 	{
 		glBufferData(GL_ARRAY_BUFFER, InstanceData[i].size()*sizeof(Per_Instance), InstanceData[i].data(), GL_STREAM_DRAW);
 		glDrawElementsInstancedBaseVertex(GL_TRIANGLES, mesh_[i].element_count, GL_UNSIGNED_INT, TGL_BUFFER_OFFSET(mesh_[i].element_offset), InstanceData[i].size(), mesh_[i].position_offset);
 	}
 
+	glDisable(GL_CULL_FACE);
 	glUseProgram(0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -695,7 +696,7 @@ void MyView::LightPass(glm::mat4 view, glm::mat4 projection)
 		glBindVertexArray(light_cone_mesh_.vao);
 		glDrawElements(GL_TRIANGLES, light_cone_mesh_.element_count, GL_UNSIGNED_INT, 0);
 	}
-
+	glDisable(GL_CULL_FACE);
 	glUseProgram(0);
 }
 void MyView::ShadowPass()
@@ -715,6 +716,7 @@ void MyView::ShadowPass()
 			
 		}
 	}
+	glDisable(GL_CULL_FACE);
 	glCullFace(GL_NONE);
 
 }
@@ -744,16 +746,16 @@ void MyView::UpdateLights()
 	//	lights_.insert(std::make_pair(i.getId(), newlight));
 	//}
 
-	for (auto i : scene_->getAllDirectionalLights())
-	{
-		glm::mat4 Matrix = glm::mat4(1);
-		Lights newlight;
-		newlight.Modelxform = Matrix;
-		newlight.intensity = i.getIntensity();
-		newlight.direction = i.getDirection();
-		
-		lights_.insert(std::make_pair(i.getId(), newlight));
-	}
+	//for (auto i : scene_->getAllDirectionalLights())
+	//{
+	//	glm::mat4 Matrix = glm::mat4(1);
+	//	Lights newlight;
+	//	newlight.Modelxform = Matrix;
+	//	newlight.intensity = i.getIntensity();
+	//	newlight.direction = i.getDirection();
+	//	
+	//	lights_.insert(std::make_pair(i.getId(), newlight));
+	//}
 
 	for (auto j : scene_->getAllPointLights())
 	{
@@ -806,7 +808,6 @@ void MyView::UpdateMeshs()
 		InstanceData.push_back(NewInstace);
 	}
 }
-
 bool MyView::CreateShader(GLuint& shader_program,
 	std::string shader_name,
 	std::vector<std::string> attriblocations,
@@ -867,7 +868,6 @@ bool MyView::CreateShader(GLuint& shader_program,
 	}
 	return true;
 }
-
 void MyView::AAPass()
 {
 	AAEdgePass();
