@@ -22,6 +22,9 @@
     <Filter Include="Shaders\SMAA">
       <UniqueIdentifier>{fc5db536-a44b-4076-8426-0e5cb6625e46}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\Shadow">
+      <UniqueIdentifier>{cfd76c58-ba75-4911-b622-b79ecc0d293a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MyController.cpp">
@@ -96,6 +99,18 @@
     </None>
     <None Include="..\demo\dir_vs.glsl">
       <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\demo\shadow_fs.glsl">
+      <Filter>Shaders\Shadow</Filter>
+    </None>
+    <None Include="..\demo\shadow_Pre_fs.glsl">
+      <Filter>Shaders\Shadow</Filter>
+    </None>
+    <None Include="..\demo\shadow_Pre_vs.glsl">
+      <Filter>Shaders\Shadow</Filter>
+    </None>
+    <None Include="..\demo\shadow_vs.glsl">
+      <Filter>Shaders\Shadow</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -330,6 +330,10 @@
     <None Include="..\demo\gbuffer_vs.glsl" />
     <None Include="..\demo\light_fs.glsl" />
     <None Include="..\demo\light_vs.glsl" />
+    <None Include="..\demo\shadow_fs.glsl" />
+    <None Include="..\demo\shadow_Pre_fs.glsl" />
+    <None Include="..\demo\shadow_Pre_vs.glsl" />
+    <None Include="..\demo\shadow_vs.glsl" />
     <None Include="..\demo\SMAA_Blend_fs.glsl" />
     <None Include="..\demo\SMAA_Blend_vs.glsl" />
     <None Include="..\demo\SMAA_Edge_fs.glsl" />

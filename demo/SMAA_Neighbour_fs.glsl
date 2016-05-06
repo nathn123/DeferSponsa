@@ -12,7 +12,10 @@ uniform sampler2D blend_tex;
 in vec2 texcoord;
 in vec4 offset[2];
 in vec4 dummy2;
+layout(location = 2 ) out vec4 EdgeTex;
+layout(location = 1 ) out vec4 BlendTex;
+layout(location = 0 ) out vec4 OutputTex;
 void main()
 {
-  gl_FragColor = SMAANeighborhoodBlendingPS(texcoord, offset, Input_tex, blend_tex);
+  OutputTex = SMAANeighborhoodBlendingPS(texcoord, offset, Input_tex, blend_tex);
 }

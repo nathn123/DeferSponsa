@@ -111,7 +111,7 @@ private:
 			intensity(0),
 			coneangledegrees(0),
 			direction(0),
-			shadows(-1) {}
+			shadows(false) {}
 	};
 	
 	void
@@ -140,7 +140,7 @@ private:
 	bool
 		CreateShader(GLuint& shader_program, std::string shader_name, std::vector<std::string> attriblocations, std::vector<std::string> fragdatalocations);
 	bool
-		CreateShaderAA(GLuint& shader_program, std::string shader_name, std::vector<std::string> Defines);
+		CreateShaderAA(GLuint& shader_program, std::string shader_name);
 
 	std::shared_ptr<const SceneModel::Context> scene_;
 	std::shared_ptr<SceneModel::GeometryBuilder> geometry_;
@@ -158,7 +158,8 @@ private:
 	GLuint Light_BO;
 	GLuint IBO;
 	GLuint lbuffer_fbo;
-	GLuint lbuffer_colour_rbo;
+	GLuint lbuffer_colour_tex;
+	GLuint lbuffer_depth_stencil_RB;
 	GLuint gbuffer_position_tex;
 	GLuint gbuffer_normal_tex;
 	GLuint gbuffer_diffuse_tex;
@@ -171,6 +172,7 @@ private:
 	//SMAA vars
 	GLuint SMAA_prog;
 	GLuint SMAA_InputTex;
+	GLuint SMAA_OutputTex;
 	GLuint SMAA_Blendprog;
 	GLuint SMAA_Edgeprog;
 	GLuint SMAA_edge_fbo;
@@ -180,10 +182,13 @@ private:
 	GLuint SMAA_blendTex;
 	GLuint SMAA_areaTex;
 	GLuint SMAA_seachTex;
+	GLuint SMAA_fbo;
 
 	//shadow vars
 	GLuint Shadow_fbo;
-	GLuint Shadow_depth_rbo;
+	GLuint Shadow_depth_tex;
+	GLuint Shadow_prog;
+	GLuint Shadow_Pre_Prog;
 
 	// perf markes
 	GLuint Gbuffer_Query;
