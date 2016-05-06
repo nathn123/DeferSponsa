@@ -340,6 +340,8 @@
     <None Include="..\demo\SMAA_Edge_vs.glsl" />
     <None Include="..\demo\SMAA_Neighbour_fs.glsl" />
     <None Include="..\demo\SMAA_Neighbour_vs.glsl" />
+    <None Include="..\demo\SMAA_Resolve_fs.glsl" />
+    <None Include="..\demo\SMAA_Resolve_vs.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

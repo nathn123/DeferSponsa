@@ -127,9 +127,11 @@ private:
 	void
 		AAEdgePass();
 	void
-		AABlendPass();
+		AABlendPass(int SampleNum);
 	void
 		AANeighbourPass();
+	void
+		AAResolvePass();
 	void
 		ShadowPass();
 	void
@@ -172,6 +174,7 @@ private:
 	//SMAA vars
 	GLuint SMAA_prog;
 	GLuint SMAA_InputTex;
+	GLuint SMAA_DepthTex;
 	GLuint SMAA_OutputTex;
 	GLuint SMAA_Blendprog;
 	GLuint SMAA_Edgeprog;
@@ -183,6 +186,10 @@ private:
 	GLuint SMAA_areaTex;
 	GLuint SMAA_seachTex;
 	GLuint SMAA_fbo;
+	GLuint SMAA_Resolveprog;
+	GLuint SMAA_PrevTex;
+	int FrameCount;
+	bool FirstPass = false;
 
 	//shadow vars
 	GLuint Shadow_fbo;

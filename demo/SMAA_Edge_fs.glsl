@@ -8,6 +8,7 @@
 //#include "SMAA.h"
 
 uniform sampler2D Input_tex;
+uniform sampler2D Depth_tex;
 in vec2 texcoord;
 in vec4 offset[3];
 in vec4 dummy2;
@@ -19,7 +20,7 @@ in vec4 dummy2;
 void main()
 {
   #if SMAA_PREDICATION == 1
-    gl_FragColor = SMAAColorEdgeDetectionPS(texcoord, offset, Input_tex, depthTex);
+	gl_FragColor = SMAAColorEdgeDetectionPS(texcoord, offset, Input_tex, Depth_tex);
   #else
     gl_FragColor = SMAAColorEdgeDetectionPS(texcoord, offset, Input_tex);
   #endif

@@ -112,5 +112,11 @@
     <None Include="..\demo\shadow_vs.glsl">
       <Filter>Shaders\Shadow</Filter>
     </None>
+    <None Include="..\demo\SMAA_Resolve_fs.glsl">
+      <Filter>Shaders\SMAA</Filter>
+    </None>
+    <None Include="..\demo\SMAA_Resolve_vs.glsl">
+      <Filter>Shaders\SMAA</Filter>
+    </None>
   </ItemGroup>
 </Project>

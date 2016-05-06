@@ -146,15 +146,13 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 
 
 	CreateShaderAA(SMAA_Blendprog, "SMAA_Blend");
-	glUseProgram(SMAA_Blendprog);
 
 	CreateShaderAA(SMAA_Edgeprog, "SMAA_Edge");
-	glUseProgram(SMAA_Edgeprog);
 
 	CreateShaderAA(SMAA_Neighbourprog, "SMAA_Neighbour");
-	glUseProgram(SMAA_Neighbourprog);
 
-	glUseProgram(0);
+	CreateShaderAA(SMAA_Resolveprog, "SMAA_Resolve");
+
 
 
 	geometry_ = std::make_shared<SceneModel::GeometryBuilder>();
@@ -295,6 +293,10 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 	glBindTexture(GL_TEXTURE_2D, SMAA_blendTex);
 	glGenTextures(1, &SMAA_OutputTex);
 	glBindTexture(GL_TEXTURE_2D, SMAA_OutputTex);
+	glGenTextures(1, &SMAA_DepthTex);
+	glBindTexture(GL_TEXTURE_2D, SMAA_DepthTex);
+	glGenTextures(1, &SMAA_PrevTex);
+	glBindTexture(GL_TEXTURE_2D, SMAA_PrevTex);
 
 
 	//SMAA LOADING PRECOMPILED TEXTURES
@@ -325,6 +327,7 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 
 	// Gen Queries
 	glGenQueries(1, &Gbuffer_Query);
+	FrameCount = 0;
 }
 
 void MyView::
@@ -419,7 +422,13 @@ windowViewDidReset(std::shared_ptr<tygra::Window> window,
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, SMAA_OutputTex, 0);
 	glDrawBuffers(1, SMAABuffers);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+	
+	glBindTexture(GL_TEXTURE_2D, SMAA_PrevTex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	// doesnt need to be attached
 	glBindTexture(GL_TEXTURE_2D, SMAA_InputTex);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_FLOAT, 0);
@@ -428,7 +437,12 @@ windowViewDidReset(std::shared_ptr<tygra::Window> window,
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	
-
+	glBindTexture(GL_TEXTURE_2D, SMAA_DepthTex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	
 
 
@@ -461,7 +475,8 @@ void MyView::
 windowViewRender(std::shared_ptr<tygra::Window> window)
 {
 	assert(scene_ != nullptr);
-
+	if (FrameCount == 2)
+		FrameCount = 0;
 
 
 	auto camera = scene_->getCamera();
@@ -484,10 +499,14 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 	ambientPass(view, projection);
 	LightPass(view, projection);
 	//post
-	//ShadowPass();
+	ShadowPass();
+
 	glBindFramebuffer(GL_FRAMEBUFFER, lbuffer_fbo);
 	glBindTexture(GL_TEXTURE_2D, SMAA_InputTex);
 	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, Viewport[2], Viewport[3]); // copy final scene image to smaa input texture
+	glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fbo);
+	glBindTexture(GL_TEXTURE_2D, SMAA_DepthTex);
+	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, Viewport[2], Viewport[3]); // copy final scene depth to smaa input texture
 	AAPass();
 
 	//switch buffer
@@ -498,8 +517,8 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, SMAA_fbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, Viewport[2], Viewport[3], 0, 0, Viewport[2], Viewport[3], GL_COLOR_BUFFER_BIT, GL_LINEAR);
-
-
+	FrameCount++;
+	FirstPass = true;
 	//glBindFramebuffer(GL_READ_FRAMEBUFFER, lbuffer_fbo);
 	//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	//glBlitFramebuffer(0, 0, Viewport[2], Viewport[3], 0, 0, Viewport[2], Viewport[3], GL_COLOR_BUFFER_BIT, GL_LINEAR);
@@ -557,7 +576,6 @@ void MyView::gbufferPass(glm::mat4 view, glm::mat4 projection)
 	glUseProgram(0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
-
 void MyView::ambientPass(glm::mat4 view, glm::mat4 projection)
 {
 	//bind lbuffer as framebuffer
@@ -969,30 +987,11 @@ bool MyView::CreateShader(GLuint& shader_program,
 }
 void MyView::AAPass()
 {
-	//glBindFramebuffer(GL_FRAMEBUFFER, SMAA_fbo);
-	// assigne the write to textures to locations
-	
-	
-	
-
-	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_2D, SMAA_OutputTex);
-	//glActiveTexture(GL_TEXTURE1);
-	//glBindTexture(GL_TEXTURE_2D, SMAA_edgeTex);
-	//glActiveTexture(GL_TEXTURE2);
-	//glBindTexture(GL_TEXTURE_2D, SMAA_blendTex);
-	//glActiveTexture(GL_TEXTURE3);
-	//glBindTexture(GL_TEXTURE_2D, SMAA_InputTex);
-	//glActiveTexture(GL_TEXTURE4);
-	//glBindTexture(GL_TEXTURE_2D, SMAA_areaTex);
-	//glActiveTexture(GL_TEXTURE5);
-	//glBindTexture(GL_TEXTURE_2D, SMAA_seachTex);
-	//glClearColor(0, 0, 0, 0);
-	//glClear(GL_COLOR_BUFFER_BIT);
 	AAEdgePass();
-	AABlendPass();
+	AABlendPass(FrameCount);
 	AANeighbourPass();
-	//glBindFramebuffer(GL_FRAMEBUFFER, SMAA_fbo);
+	if (FirstPass)
+		AAResolvePass();
 }
 void MyView::AAEdgePass()
 {
@@ -1003,19 +1002,20 @@ void MyView::AAEdgePass()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, SMAA_InputTex);
 	glUniform1i(glGetUniformLocation(SMAA_Edgeprog, "Input_tex"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, SMAA_DepthTex);
+	glUniform1i(glGetUniformLocation(SMAA_Edgeprog, "Depth_tex"), 1);
 	// draw quad
 	glBindVertexArray(light_quad_mesh_.vao);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
-void MyView::AABlendPass()
+void MyView::AABlendPass(int SampleNum)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, SMAA_blend_fbo);
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
-
 	glUseProgram(SMAA_Blendprog);
-	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, SMAA_edgeTex);
 	glUniform1i(glGetUniformLocation(SMAA_Blendprog, "edge_tex"), 0);
@@ -1025,12 +1025,24 @@ void MyView::AABlendPass()
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, SMAA_seachTex);
 	glUniform1i(glGetUniformLocation(SMAA_Blendprog, "search_tex"), 2);
-
+	glm::ivec4 indices;
+	glm::vec2 camjitter;
 	// draw quad
+	if (SampleNum == 0)
+	{
+		camjitter = glm::vec2(0.25, -0.25);
+		indices = glm::ivec4(1,1,1,0);
+	}
+	else if (SampleNum == 1)
+	{
+		camjitter = glm::vec2(-0.25, 0.25);
+		indices = glm::ivec4(2, 2, 2, 0);
+	}
+	glUniform4iv(glGetUniformLocation(SMAA_Blendprog, "subSampleIndices"), 1, glm::value_ptr(indices));
+	glUniform2fv(glGetUniformLocation(SMAA_Blendprog, "CamJitter"),1, glm::value_ptr(camjitter));
 	glBindVertexArray(light_quad_mesh_.vao);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
 }
 void MyView::AANeighbourPass()
 {
@@ -1038,24 +1050,38 @@ void MyView::AANeighbourPass()
 	glUseProgram(SMAA_Neighbourprog);
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
-
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, SMAA_InputTex);
 	glUniform1i(glGetUniformLocation(SMAA_Neighbourprog, "Input_tex"), 0);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, SMAA_blendTex);
 	glUniform1i(glGetUniformLocation(SMAA_Neighbourprog, "blend_tex"), 1);
-
-
 	glEnable(GL_FRAMEBUFFER_SRGB);
-
 	// draw quad
 	glBindVertexArray(light_quad_mesh_.vao);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-
 	glDisable(GL_FRAMEBUFFER_SRGB);
+	GLint Viewport[4];
+	glGetIntegerv(GL_VIEWPORT, Viewport);
+	glBindTexture(GL_TEXTURE_2D, SMAA_PrevTex);
+	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, Viewport[2], Viewport[3]); // copy final scene depth to smaa input texture
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+}
+void MyView::AAResolvePass()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, SMAA_fbo);
+	glUseProgram(SMAA_Resolveprog);
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, SMAA_OutputTex);
+	glUniform1i(glGetUniformLocation(SMAA_Resolveprog, "CurFrame"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, SMAA_PrevTex);
+	glUniform1i(glGetUniformLocation(SMAA_Resolveprog, "PrevFrame"), 1);
+	glBindVertexArray(light_quad_mesh_.vao);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 bool MyView::CreateShaderAA(GLuint& shader_program,
 	std::string shader_name)
@@ -1065,7 +1091,7 @@ bool MyView::CreateShaderAA(GLuint& shader_program,
 							  #ifndef SMAA_PIXEL_SIZE\n\
 							  #define SMAA_PIXEL_SIZE vec2(1.0 / 1280.0, 1.0 / 720.0)\n\
 							  #endif\n\#define SMAA_PRESET_ULTRA 1\n\
-							  #define SMAA_PREDICATION 0\n\
+							  #define SMAA_PREDICATION 1\n\
 							  #define SMAA_GLSL_3 1\n" };
 	GLint compile_status = 0;
 	shader_program = glCreateProgram();
