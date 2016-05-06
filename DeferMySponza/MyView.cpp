@@ -798,7 +798,12 @@ void MyView::ShadowPass()
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
 	glUseProgram(Shadow_Pre_Prog);
+	glBindTexture(GL_TEXTURE_RECTANGLE, Shadow_depth_tex);
+	GLint height, width;
+	glGetTexLevelParameteriv(GL_TEXTURE_RECTANGLE, 0, GL_TEXTURE_HEIGHT, &height);
+	glGetTexLevelParameteriv(GL_TEXTURE_RECTANGLE, 0, GL_TEXTURE_WIDTH, &width);
 
+	glViewport(0, 0, width, height);
 	
 	// FIRST PASS
 	for each (auto  light in lights_)
@@ -813,9 +818,9 @@ void MyView::ShadowPass()
 			//setup light view project
 			/*auto view = glm::lookAt(camera.getPosition(), camera.getDirection(), scene_->getUpDirection());
 			auto projection = glm::perspective(camera.getVerticalFieldOfViewInDegrees(), aspect, camera.getNearPlaneDistance(), camera.getFarPlaneDistance());*/
-			auto view = glm::lookAt(light.second.position, -(light.second.position + light.second.direction), scene_->getUpDirection());
-			auto projection = glm::ortho<float>(-100, 100, -100, 100, -100, 200);
-			glUniformMatrix4fv(glGetUniformLocation(Shadow_Pre_Prog, "LightVP"), 1, false, glm::value_ptr(projection*view));
+			auto view = glm::lookAt(light.second.position, -(light.second.direction+light.second.position), scene_->getUpDirection());
+			auto projection = glm::perspective(light.second.coneangledegrees, aspect, 0.1f, 100000.f);
+			glUniformMatrix4fv(glGetUniformLocation(Shadow_Pre_Prog, "LightVP"), 1, false, glm::value_ptr(view*projection));
 			//SetUniforms(Shadow_prog, view, projection);
 			
 			// draw scene
@@ -834,6 +839,15 @@ void MyView::ShadowPass()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_RECTANGLE, Shadow_depth_tex);
 	glDisable(GL_CULL_FACE);
+
+
+
+
+
+
+
+
+	glViewport(0, 0, 1280,720 );
 	
 
 }
