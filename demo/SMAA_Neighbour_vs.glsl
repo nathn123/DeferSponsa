@@ -13,7 +13,7 @@ out vec4 offset[2];
 out vec4 dummy2;
 void main()
 {
-  texcoord = gl_MultiTexCoord2.xy;
+	texcoord = (vertex_position + 1) / 2;;
   vec4 dummy1 = vec4(0);
   SMAANeighborhoodBlendingVS(dummy1, dummy2, texcoord, offset);
   gl_Position = vec4(vertex_position,0.0f, 1.0f);

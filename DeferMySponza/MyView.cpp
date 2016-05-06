@@ -1064,7 +1064,7 @@ bool MyView::CreateShaderAA(GLuint& shader_program,
 	std::string preDefine = { "#version 330 compatibility\n\
 							  #ifndef SMAA_PIXEL_SIZE\n\
 							  #define SMAA_PIXEL_SIZE vec2(1.0 / 1280.0, 1.0 / 720.0)\n\
-							  #endif\n\#define SMAA_PRESET_LOW 1\n\
+							  #endif\n\#define SMAA_PRESET_ULTRA 1\n\
 							  #define SMAA_PREDICATION 0\n\
 							  #define SMAA_GLSL_3 1\n" };
 	GLint compile_status = 0;

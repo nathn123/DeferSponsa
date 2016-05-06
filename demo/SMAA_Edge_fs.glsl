@@ -18,12 +18,11 @@ in vec4 dummy2;
 
 void main()
 {
-  //#if SMAA_PREDICATION == 1
-  //  gl_FragColor = SMAAColorEdgeDetectionPS(texcoord, offset, Input_tex, depthTex);
-  //#else
-  //  gl_FragColor = SMAAColorEdgeDetectionPS(texcoord, offset, Input_tex);
-  //#endif
-  gl_FragColor = SMAALumaEdgeDetectionPS(texcoord, offset, Input_tex);
+  #if SMAA_PREDICATION == 1
+    gl_FragColor = SMAAColorEdgeDetectionPS(texcoord, offset, Input_tex, depthTex);
+  #else
+    gl_FragColor = SMAAColorEdgeDetectionPS(texcoord, offset, Input_tex);
+  #endif
  //vec4 Test= SMAAColorEdgeDetectionPS(texcoord, offset, Input_tex);
  // EdgeTex = Test;
 }
